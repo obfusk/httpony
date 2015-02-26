@@ -24,14 +24,14 @@ class Test_TinyHTTPServer_Client(unittest.TestCase):
     self.client = T.Client()
 
   def test_default_headers(self):
-    x = U.headers(self.client.default_headers())
+    x = U.lower_keys(self.client.default_headers())
     self.assertIsInstance(x, dict)
-    self.assertEqual(x['user-agent'], T.DEFAULT_AGENT)
+    self.assertEqual(x["user-agent"], T.DEFAULT_AGENT)
 
   # ...
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   unittest.main()
 
 # vim: set tw=70 sw=2 sts=2 et fdm=marker :

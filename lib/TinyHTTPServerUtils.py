@@ -13,16 +13,22 @@ CRLF = "\r\n"
 
 def crlf(xs):
   """joins list of lines (w/o newline) w/ CRLF"""
-  return ''.join(map(lambda x: x + CRLF, xs))
+  return "".join(map(lambda x: x + CRLF, xs))
 
 def deindent(x, n):
   """creates list of n-char-deindented lines (minus first and last);
   for pseudo-heredocs"""
   return map(lambda x: x[n:], x.splitlines()[1:-1])
 
-def headers(x):
+def lower_keys(x):
   """lowercases keys of dict; useful for headers"""
   return dict(((k.lower(), v) for (k, v) in x.items()))
+
+def merge_dict(x, *xs):
+  """merge dictionaries"""
+  y = x.copy()
+  for z in xs: y.update(z)
+  return y
 
 # TODO: look at spec, handle errors
 def parse_headers_and_body(body):
@@ -33,8 +39,8 @@ def parse_headers_and_body(body):
     if len(x) != 2:
       body = x[0]; break
     h, body = x
-    if h == '': break
-    k, v = h.split(':', 1); hs[k] = v.strip()
+    if h == "": break
+    k, v = h.split(":", 1); hs[k] = v.strip()
   return dict(headers = hs, body = body)
 
 # TODO
@@ -44,11 +50,11 @@ def parse_request(body):
 def parse_response(body):
   """turn raw response into dict w/ headers, body, status, etc."""
   status_line, body = body.split(CRLF, 1)
-  http_version, status_code, reason = status_line.split(' ', 2)
-  return parse_headers_and_body(body).update(
+  http_version, status_code, reason = status_line.split(" ", 2)
+  return merge_dict(parse_headers_and_body(body), dict(
     version = http_version.upper(), status = int(status_code),
     reason = reason
-  )
+  ))
 
 # ...
 

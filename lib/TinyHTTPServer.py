@@ -15,13 +15,13 @@ import sys
 
 import TinyHTTPServerUtils as Utils
 
-VERSION           = '0.0.1'
+VERSION           = "0.0.1"
 
 DEFAULT_PORT      = 80
 DEFAULT_BUFSIZE   = 1024
 DEFAULT_AGENT     = "tiny-http-server/{}".format(VERSION)
 
-METHOD_GET        = 'GET'
+METHOD_GET        = "GET"
 
 
 class ThreadedTCPServer(SocketServer.ThreadingMixIn,
@@ -51,7 +51,7 @@ class Client:
 
   REQUEST = ["{method} {url} HTTP/1.1", "{headers}"]
 
-  def __init__(self, host = 'localhost', port = DEFAULT_PORT,
+  def __init__(self, host = "localhost", port = DEFAULT_PORT,
                bufsize = DEFAULT_BUFSIZE, user_agent = DEFAULT_AGENT):
     self.__dict__.update(
       host = host, port = port, bufsize = bufsize,
@@ -73,7 +73,7 @@ class Client:
       "User-Agent"  : self.user_agent,
       "Host"        : "{}:{}".format(self.host, self.port),
       "Accept"      : "*/*",
-      "Connection"  : 'close'                                   # TODO
+      "Connection"  : "close"                                   # TODO
     }
 
   def request(self, url, method = METHOD_GET, headers = {},
@@ -117,17 +117,17 @@ def test():
   import pprint
   pp = pprint.PrettyPrinter(indent=2)
   x = Client(port = 4567)
-  for line in x.request('/').splitlines():
+  for line in x.request("/").splitlines():
     print "> " + line
   print
-  resp = x.get('/', raw = True)
+  resp = x.get("/", raw = True)
   for line in resp.splitlines():
     print "< " + line
   print
   pp.pprint(Utils.parse_response(resp))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   test()
 
 # vim: set tw=70 sw=2 sts=2 et fdm=marker :
