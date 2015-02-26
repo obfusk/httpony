@@ -1,7 +1,10 @@
-.PHONY: test run repl sinatra curl
+.PHONY: test run repl sinatra curl clean
+
+SHELL             = bash
 
 LIBS              = TinyHTTPServer TinyHTTPServerUtils
 CURL_PATH        ?= /
+
 export PYTHONPATH = $(PWD)/lib:$(PWD)/test
 
 test:
@@ -18,3 +21,6 @@ sinatra:
 
 curl:
 	curl -v "localhost:4567$(CURL_PATH)"
+
+clean:
+	shopt -s nullglob globstar; rm -f **/*.pyc
