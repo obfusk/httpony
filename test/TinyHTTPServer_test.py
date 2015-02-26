@@ -28,6 +28,33 @@ class Test_TinyHTTPServer_Client(unittest.TestCase):
     self.assertIsInstance(x, dict)
     self.assertEqual(x["user-agent"], T.DEFAULT_AGENT)
 
+  def test_request(self):
+    pass
+
+  # NB: uses socket
+  def test_make_request(self):
+    pass
+
+  # NB: uses socket
+  def test_get(self):
+    pass
+
+  # ...
+
+
+class Test_TinyHTTPServer_FakeClient(unittest.TestCase):
+
+  def setUp(self):
+    self.client = T.FakeClient()
+
+  # NB: uses fake socket
+  def test_make_request(self):
+    pass
+
+  # NB: uses fake socket
+  def test_get(self):
+    pass
+
   # ...
 
 

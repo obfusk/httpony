@@ -14,7 +14,7 @@ run:
 	python -m $(firstword $(LIBS))
 
 repl:
-	python -i -c 'import $(firstword $(LIBS))'
+	python -i -c 'import $(firstword $(LIBS)) as T'
 
 sinatra:
 	ruby -rsinatra -e 'get("/") { "Hi!\n" }; get("/*") { request.env.inspect + "\n" }'

@@ -89,9 +89,9 @@ class Client:
     )
 
   # TODO: handle body, params
-  def do_request(self, url, method = METHOD_GET, params = {},
-                 headers = {}, default_headers = True, raw = False,
-                 body = None):
+  def make_request(self, url, method = METHOD_GET, params = {},
+                   headers = {}, default_headers = True, raw = False,
+                   body = None):
     """make request; return dict (or raw request)"""
     def f(sock):
       req = self.request(url, method, headers, default_headers)
@@ -105,11 +105,42 @@ class Client:
   def get(self, url, params = {}, headers = {},
           default_headers = True, raw = False):
     """GET request"""
-    return self.do_request(
+    return self.make_request(
       url, METHOD_GET, params, headers, default_headers, raw
     )
 
   # ...
+
+
+class FakeClient(Client):
+
+  """Fake HTTP Client"""
+
+  class FakeSocket:
+
+    def __init__(self, data):
+      self.data = data; self.sent = ""
+
+    def connect(self, (host, port)):
+      pass
+
+    def sendall(self, data):
+      self.sent += data
+
+    def recv(self, bufsize):
+      buf, self.data = self.data[:bufsize], self.data[bufsize:]
+      return buf
+
+
+  # TODO
+  def _with_socket(self, f):
+    """run f(fake_socket); returns return value of f"""
+    try:
+      sock = FakeSocket("..."); sock.connect((self.host, self.port))
+      x = f(sock)
+    finally:
+      sock.close()
+    return x
 
 
 # TODO
