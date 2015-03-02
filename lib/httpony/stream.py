@@ -39,12 +39,18 @@ class IStream(object):
   def __iter__(self):
     return self.readlines()
 
-  def readchunks(self, size = DEFAULT_BUFSIZE):
+  def readchunks(self, size = DEFAULT_BUFSIZE, length = None):
     """chunk (of up to size bytes) iterator"""
-    while True:
-      chunk = self.read(size)
-      if not chunk: break
-      yield chunk
+    if length == None:
+      while True:
+        chunk = self.read(size)
+        if not chunk: break
+        yield chunk
+    else:
+      while length > 0:
+        n = min(length, size); chunk = self.read(n); length -= n
+        if not chunk: break
+        yield chunk
 
   def close(self):
     """ close stream"""
@@ -72,8 +78,8 @@ class IFileStream(IStream):
   """file input stream"""
 
   def __init__(self, file, *a, **k):
-    super(IFileStream, self).__init__(*a, **k)
     self.file = file
+    super(IFileStream, self).__init__(*a, **k)
 
   def read(self, size = None):
     return self.file.read(size)
@@ -93,8 +99,8 @@ class OFileStream(OStream):
   """file output stream"""
 
   def __init__(self, file, *a, **k):
-    super(OFileStream, self).__init__(*a, **k)
     self.file = file
+    super(OFileStream, self).__init__(*a, **k)
 
   def write(self, data):
     return self.file.write(data)
@@ -129,9 +135,14 @@ class ISocketStream(IFileStream):
   """socket input stream"""
 
   def __init__(self, sock, bufsize = DEFAULT_BUFSIZE):
-    self.bufsize = DEFAULT_BUFSIZE
-    file = sock.makefile("rb", bufsize)
+    self.sock     = sock
+    self.bufsize  = DEFAULT_BUFSIZE
+    file          = sock.makefile("rb", bufsize)
     super(ISocketStream, self).__init__(file, *a, **k)
+
+  def close(self):
+    self.sock.shutdown(); self.sock.close()
+    return super(ISocketStream, self).close()
 
 
 class OSocketStream(OFileStream):
@@ -139,27 +150,32 @@ class OSocketStream(OFileStream):
   """socket output stream"""
 
   def __init__(self, sock, bufsize = DEFAULT_BUFSIZE):
-    self.bufsize = DEFAULT_BUFSIZE
-    file = sock.makefile("wb", bufsize)
+    self.sock     = sock
+    self.bufsize  = DEFAULT_BUFSIZE
+    file          = sock.makefile("wb", bufsize)
     super(OSocketStream, self).__init__(file, *a, **k)
 
-
-class ISocketServerStream(IFileStream):
-
-  """SocketServer input stream"""
-
-  def __init__(self, server):
-    file = server.rfile
-    super(ISocketServerStream, self).__init__(file, *a, **k)
+  def close(self):
+    self.sock.shutdown(); self.sock.close()
+    return super(OSocketStream, self).close()
 
 
-class OSocketServerStream(OFileStream):
+class IRequestStream(IFileStream):
 
-  """SocketServer output stream"""
+  """SocketServer request handler input stream"""
 
-  def __init__(self, server):
-    file = server.wfile
-    super(OSocketServerStream, self).__init__(file, *a, **k)
+  def __init__(self, handler):
+    self.handler = handler; file = handler.rfile
+    super(IRequestStream, self).__init__(file, *a, **k)
+
+
+class ORequestStream(OFileStream):
+
+  """SocketServer request handler output stream"""
+
+  def __init__(self, handler):
+    self.handler = handler; file = server.wfile
+    super(ORequestStream, self).__init__(file, *a, **k)
 
 
 def interact(istream, ostream, f):
@@ -172,6 +188,7 @@ def stripped_lines(x):
   """wraps line iterator, strips trailing '\\r' and '\\n'"""
   for line in x:
     yield line.rstrip("\r\n")
+
 
 # ...
 

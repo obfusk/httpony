@@ -26,7 +26,8 @@ clean:
 
 sinatra:
 	ruby -rsinatra -e 'get("/") { "Hi!\n" }; \
-	  get("/*") { request.env.inspect + "\n" }'
+	  get("/*") { request.env.inspect + "\n" }; \
+	  post("/*") { request.body.read() }'
 
 curl:
 	curl -v "localhost:4567$(CURL_PATH)"

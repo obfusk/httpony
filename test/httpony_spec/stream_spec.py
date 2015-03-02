@@ -52,6 +52,13 @@ class Test_IStringStream(unittest.TestCase):
     y = ["foo\nbar\n", "baz\n"]
     self.assertEqual(list(s.readchunks(8)), y)
 
+  def test_readchunks_w_length(self):
+    s = S.IStringStream("foo\nbar\nbaz\n")
+    y = ["foo\nbar\n", "ba"]
+    z = "z\n"
+    self.assertEqual(list(s.readchunks(8, 10)), y)
+    self.assertEqual(s.read(), z)
+
 
 class Test_OStringStream(unittest.TestCase):
 
