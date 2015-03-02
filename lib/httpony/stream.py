@@ -2,7 +2,7 @@
 #
 # File        : httpony/stream.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-01
+# Date        : 2015-03-02
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -39,22 +39,85 @@ class IStream(object):
   def __iter__(self):
     return self.readlines()
 
-  def readchunks(self, size = DEFAULT_BUFSIZE, length = None):
+  def readchunks(self, size = DEFAULT_BUFSIZE):
     """chunk (of up to size bytes) iterator"""
-    if length == None:
-      while True:
-        chunk = self.read(size)
-        if not chunk: break
-        yield chunk
-    else:
-      while length > 0:
-        n = min(length, size); chunk = self.read(n); length -= n
-        if not chunk: break
-        yield chunk
+    while True:
+      chunk = self.read(size)
+      if not chunk: break
+      yield chunk
+
+  def split(self, n, bufsize = DEFAULT_BUFSIZE):
+    """split stream at pos n"""
+    t = IStreamTake(self, n, bufsize)
+    d = IStreamDrop(self, n, t)
+    return (t, d)
 
   def close(self):
     """ close stream"""
     raise NotImplementedError
+
+
+class IStreamTake(IStream):
+
+  """..."""
+
+  def __init__(self, parent, n, bufsize = DEFAULT_BUFSIZE, *a, **k):
+    self.parent = parent; self.n = n; self.bufsize = bufsize
+    self.buf = ""
+    super(IStreamTake, self).__init__(*a, **k)
+
+  def done(self):
+    """..."""
+    return self.n == 0
+
+  def peek(self, size = None):
+    """..."""
+    if size == -1   : size = self.n
+    if size == None : size = self.bufsize
+    m = min(size, self.n)
+    if m > len(self.buf):
+      self.buf += self.parent.read(m - len(self.buf))
+    return self.buf[:m]
+
+  def read(self, size = None):
+    if size == None: size = self.n
+    m = min(size, self.n); self.n -= m
+    if m <= len(self.buf):
+      buf = self.buf; self.buf = buf[m:]
+      return buf[:m]
+    else:
+      buf = self.buf; self.buf = ""
+      return buf + self.parent.read(m - len(buf))
+
+  def readline(self):
+    buf = ""
+    while True:
+      data = self.peek(self.bufsize)
+      if data == "": break
+      i = data.find("\n")
+      if i != -1: return buf + self.read(i + 1)
+      buf += self.read(self.bufsize)
+    return buf
+
+
+class IStreamDrop(IStream):
+
+  """..."""
+
+  def __init__(self, parent, n, take, *a, **k):
+    self.parent = parent; self.n = n; self.take = take
+    super(IStreamDrop, self).__init__(*a, **k)
+
+  def _force_take(self):
+    if not self.take.done(): self.take.peek(-1)
+
+  def read(self, size = None):
+    self._force_take()
+    return self.parent.read(size)
+
+  def readline(self):
+    self._force_take()
+    return self.parent.readline()
 
 
 class OStream(object):

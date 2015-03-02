@@ -2,7 +2,7 @@
 #
 # File        : stream_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-01
+# Date        : 2015-03-02
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -52,12 +52,41 @@ class Test_IStringStream(unittest.TestCase):
     y = ["foo\nbar\n", "baz\n"]
     self.assertEqual(list(s.readchunks(8)), y)
 
-  def test_readchunks_w_length(self):
-    s = S.IStringStream("foo\nbar\nbaz\n")
-    y = ["foo\nbar\n", "ba"]
-    z = "z\n"
-    self.assertEqual(list(s.readchunks(8, 10)), y)
-    self.assertEqual(s.read(), z)
+  def test_split_chunks(self):
+    s     = S.IStringStream("foo\nbar\nbaz\n")
+    t, d  = s.split(10)
+    y     = ["fo", "o\n", "ba", "r\n", "ba"]
+    z     = "z\n"
+    self.assertEqual(list(t.readchunks(2)), y)
+    self.assertEqual(d.read(), z)
+
+  def test_split_chunks_forced(self):
+    s     = S.IStringStream("foo\nbar\nbaz\n")
+    t, d  = s.split(10)
+    y     = ["fo", "o\n", "ba", "r\n", "ba"]
+    z     = "z\n"
+    self.assertEqual(d.read(), z)
+    self.assertEqual(list(t.readchunks(2)), y)
+
+  def test_split_readline(self):
+    s     = S.IStringStream("foo\nbar\nbaz\n")
+    t, d  = s.split(10, 1)  # test bufsize too
+    y     = ["foo\n", "bar\n", "ba"]
+    z     = "z\n"
+    self.assertEqual(t.readline(), y[0])
+    self.assertEqual(t.readline(), y[1])
+    self.assertEqual(d.readline(), z)
+    self.assertEqual(t.readline(), y[2])
+
+  def test_split_readlines(self):
+    s     = S.IStringStream("foo\nbar\nbaz\n")
+    t, d  = s.split(10)
+    y     = ["foo\n", "bar\n", "ba"]
+    z     = ["z\n"]
+    self.assertEqual(list(t), y)
+    self.assertEqual(list(d), z)
+
+  # ...
 
 
 class Test_OStringStream(unittest.TestCase):

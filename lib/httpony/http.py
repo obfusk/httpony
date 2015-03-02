@@ -2,7 +2,7 @@
 #
 # File        : httpony/http.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-01
+# Date        : 2015-03-02
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -31,10 +31,10 @@ def generic_messages(si):
     )
 
 # TODO
-def chunk_body(msg, bufsize):
+def split_body(msg, bufsize):
   """..."""
   cl = int(msg["headers"].get("content-length", 0))
-  return msg["body"].readchunks(bufsize, cl)
+  return msg["body"].split(cl, bufsize)
 
 # TODO
 def requests(si, bufsize = S.DEFAULT_BUFSIZE):
@@ -42,9 +42,10 @@ def requests(si, bufsize = S.DEFAULT_BUFSIZE):
   for msg in generic_messages(si):
     method, uri, version = msg["start_line"].split(" ")
     co = msg["headers"].get("connection", "keep-alive").lower()
+    body, si = split_body(msg, bufsize)
     yield dict(
       method = method, uri = uri, version = version,
-      headers = msg["headers"], body = chunk_body(msg, bufsize)
+      headers = msg["headers"], body = body
     )
     if co == "close":
       si.close()
@@ -55,16 +56,17 @@ def responses(si, bufsize = S.DEFAULT_BUFSIZE):
   """..."""
   for msg in generic_messages(si):
     version, status, reason = msg["start_line"].split(" ", 2)
+    body, si = split_body(msg, bufsize)
     yield dict(
       version = version, status = int(status), reason = reason,
-      headers = msg["headers"], body = chunk_body(msg, bufsize)
+      headers = msg["headers"], body = body
     )
 
 # TODO
 def evaluate_bodies(xs):
   """..."""
   for msg in xs:
-    msg["body"] = "".join(msg["body"])
+    msg["body"] = msg["body"].read()
     yield msg
 
 
