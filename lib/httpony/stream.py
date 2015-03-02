@@ -82,7 +82,7 @@ class IFileStream(IStream):
     return self.file.readline()
 
   def readlines(self):
-    return self.file.readlines()
+    return self.file.__iter__()
 
   def close(self):
     return self.file.close()

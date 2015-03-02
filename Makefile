@@ -3,19 +3,17 @@
 SHELL       = bash
 
 LIB         = httpony
-SUBLIBS     = client handler request response server stream
 RUN         = server
-TESTS       = $(patsubst %,$(LIB)_spec.%_spec,$(SUBLIBS))
 
 CURL_PATH  ?= /
 
 export PYTHONPATH = $(PWD)/lib:$(PWD)/test
 
 test:
-	python -m unittest $(TESTS)
+	python -m unittest discover -s test -p '*_spec.py'
 
 test_v:
-	python -m unittest -v $(TESTS)
+	python -m unittest discover -s test -p '*_spec.py' -v
 
 run:
 	python -m $(LIB).$(RUN)
