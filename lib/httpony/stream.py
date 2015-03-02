@@ -160,22 +160,22 @@ class OSocketStream(OFileStream):
     return super(OSocketStream, self).close()
 
 
-class IRequestStream(IFileStream):
+class IRequestHandlerStream(IFileStream):
 
   """SocketServer request handler input stream"""
 
-  def __init__(self, handler):
+  def __init__(self, handler, *a, **k):
     self.handler = handler; file = handler.rfile
-    super(IRequestStream, self).__init__(file, *a, **k)
+    super(IRequestHandlerStream, self).__init__(file, *a, **k)
 
 
-class ORequestStream(OFileStream):
+class ORequestHandlerStream(OFileStream):
 
   """SocketServer request handler output stream"""
 
-  def __init__(self, handler):
-    self.handler = handler; file = server.wfile
-    super(ORequestStream, self).__init__(file, *a, **k)
+  def __init__(self, handler, *a, **k):
+    self.handler = handler; file = handler.wfile
+    super(ORequestHandlerStream, self).__init__(file, *a, **k)
 
 
 def interact(istream, ostream, f):
