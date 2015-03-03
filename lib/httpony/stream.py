@@ -49,7 +49,7 @@ class IStream(object):
   def split(self, n, bufsize = DEFAULT_BUFSIZE):
     """split stream at pos n"""
     t = IStreamTake(self, n, bufsize)
-    d = IStreamDrop(self, n, t)
+    d = IStreamDrop(self, t)
     return (t, d)
 
   def close(self):
@@ -104,8 +104,8 @@ class IStreamDrop(IStream):
 
   """..."""
 
-  def __init__(self, parent, n, take, *a, **k):
-    self.parent = parent; self.n = n; self.take = take
+  def __init__(self, parent, take, *a, **k):
+    self.parent = parent; self.take = take
     super(IStreamDrop, self).__init__(*a, **k)
 
   def _force_take(self):
