@@ -73,6 +73,15 @@ class Test_util(unittest.TestCase):                             # {{{1
     self.assertEqual(x, y)
     self.assertNotEqual(x, z)
 
+  def test_cmp(self):
+    x = U.idict(Foo = 42, Bar = 37)
+    y = U.idict(Foo = 42, Bar = 37)
+    z = U.idict(Foo = 42, Bar = 99)
+    self.assertGreater(z, x)
+    self.assertGreaterEqual(z, y)
+    self.assertLess(y, z)
+    self.assertLessEqual(x, y)
+
   def test_repr(self):
     x = U.idict(x = 42)
     self.assertEqual(str(x), "idict({'x': 42})")

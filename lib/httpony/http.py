@@ -56,10 +56,9 @@ HTTP_STATUS_CODES = {                                           # {{{1
   505 : "HTTP Version Not Supported"
 }                                                               # }}}1
 
-# TODO
 class Message(object):                                          # {{{1
 
-  """message (base class)"""
+  """HTTP request or response message (base class)"""
 
   __slots__ = []
 
@@ -67,9 +66,20 @@ class Message(object):                                          # {{{1
     x = self._defaults(); x.update(kw)
     for k in self.__slots__:
       if k in x:
-        super(Message, self).__setattr__(k, x[k]); del x[k]
+        self._set(k, x[k]); del x[k]
     if len(x):
       raise TypeError("unknown keys: {}".format("".join(x.keys())))
+    if not isinstance(self.headers, U.idict):
+      self._set("headers", U.idict(self.headers))
+    if isinstance(self.body, str):
+      self._set("body", (self.body,))
+    elif isinstance(self.body, S.IStream):
+      self._set("body", self.body.readchunks())
+
+  def force_body(self):
+    if not (isinstance(self.body, tuple) and len(self.body) == 1):
+      self._set("body", ("".join(self.body),))
+    return self.body[0]
 
   # private!
   def _set(self, k, v):
@@ -82,22 +92,24 @@ class Message(object):                                          # {{{1
       )
     )
 
-  def dict(self):
-    return dict((k, self.__getattribute__(k)) for k in self.__slots__)
+  def iteritems(self):
+    return ((k, self.__getattribute__(k)) for k in self.__slots__)
 
   def __eq__(self, rhs):
-    if type(self) is not type(rhs):
-      return False
-    for k in self.__slots__:
-      if self.__getattribute__(k) != rhs.__getattribute__(k):
-        return False
-    return True
+    if not isinstance(rhs, type(self)):
+      return NotImplemented
+    return dict(self.iteritems()) == dict(rhs.iteritems())
+
+  def __cmp__(self, rhs):
+    if not isinstance(rhs, type(self)):
+      return NotImplemented
+    return dict(self.iteritems()).__cmp__(dict(rhs.iteritems()))
 
   def __repr__(self):
-    return '{}({})'.format(self.__class__.__name__, repr(self.dict()))
+    return '{}({})'.format(self.__class__.__name__,
+                           repr(dict(self.iteritems())))
                                                                 # }}}1
 
-# TODO
 class Request(Message):                                         # {{{1
 
   """HTTP request"""
@@ -107,16 +119,13 @@ class Request(Message):                                         # {{{1
   def __init__(self, data = None, **kw):
     if data != None:
       if len(kw):
-        raise TypeError(
-          "arguments must either be data or keywords, not both"
-        )
+        raise TypeError("arguments must either be " +
+                        "data or keywords, not both")
       elif isinstance(data, collections.Mapping):
         kw = data
       else:
         raise TypeError("data argument must be a mapping")
     super(Request, self).__init__(**kw)
-    if not isinstance(self.headers, U.idict):
-      self._set("headers", U.idict(self.headers))
 
   def _defaults(self):
     return dict(
@@ -127,7 +136,6 @@ class Request(Message):                                         # {{{1
   # ...
                                                                 # }}}1
 
-# TODO
 class Response(Message):                                        # {{{1
 
   """HTTP response"""
@@ -137,9 +145,8 @@ class Response(Message):                                        # {{{1
   def __init__(self, data = None, **kw):
     if data != None:
       if len(kw):
-        raise TypeError(
-          "arguments must either be data or keywords, not both"
-        )
+        raise TypeError("arguments must either be "
+                        "data or keywords, not both")
       elif isinstance(data, collections.Mapping):
         kw = data
       elif isinstance(data, tuple):
@@ -151,19 +158,11 @@ class Response(Message):                                        # {{{1
            isinstance(data, collections.Iterable):
         kw = dict(body = data)
       else:
-        raise TypeError(
-          "data argument must be a " +
-          "mapping, 3-tuple, int, str, or iterable"
-        )
+        raise TypeError("data argument must be a " +
+                        "mapping, 3-tuple, int, str, or iterable")
     super(Response, self).__init__(**kw)
     if "reason" not in kw:
       self._set("reason", HTTP_STATUS_CODES[self.status])
-    if not isinstance(self.headers, U.idict):
-      self._set("headers", U.idict(self.headers))
-    if isinstance(self.body, str):
-      self._set("body", (x for x in [self.body]))
-    elif isinstance(self.body, S.IStream):
-      self._set("body", self.body.readchunks())
 
   def _defaults(self):
     return dict(
@@ -209,8 +208,7 @@ def requests(si, bufsize = S.DEFAULT_BUFSIZE):                  # {{{1
       headers = msg["headers"], body = body
     )
     if co == "close":
-      si.close()
-      return
+      si.close(); return
                                                                 # }}}1
 
 def responses(si, bufsize = S.DEFAULT_BUFSIZE):                 # {{{1
@@ -224,12 +222,10 @@ def responses(si, bufsize = S.DEFAULT_BUFSIZE):                 # {{{1
     )
                                                                 # }}}1
 
-# TODO
-def evaluate_bodies(xs):
-  """evaluate bodies in message stream"""
+def force_bodies(xs):
+  """force bodies in message stream"""
   for msg in xs:
-    m = msg.dict(); m["body"] = "".join(m["body"])
-    yield msg.__class__(m)
+    msg.force_body(); yield msg
 
 # ...
 

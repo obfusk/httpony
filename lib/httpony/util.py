@@ -52,9 +52,17 @@ class idict(collections.MutableMapping):                        # {{{1
   def __eq__(self, rhs):
     if not isinstance(rhs, collections.Mapping):
       return NotImplemented
-    elif not isinstance(rhs, idict):
+    if not isinstance(rhs, idict):
       rhs = idict(rhs)
     return dict(self.iteritems_lower()) == dict(rhs.iteritems_lower())
+
+  def __cmp__(self, rhs):
+    if not isinstance(rhs, collections.Mapping):
+      return NotImplemented
+    if not isinstance(rhs, idict):
+      rhs = idict(rhs)
+    return dict(self.iteritems_lower()) \
+      .__cmp__(dict(rhs.iteritems_lower()))
 
   def __repr__(self):
     return '{}({})'.format(
