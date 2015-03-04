@@ -10,6 +10,8 @@
 # --                                                            ; }}}1
 
 from . import stream as S
+from . import util as U
+import collections
 
 HTTP_STATUS_CODES = {                                           # {{{1
   100 : "Continue",
@@ -55,25 +57,96 @@ HTTP_STATUS_CODES = {                                           # {{{1
 }                                                               # }}}1
 
 # TODO
-class Request(object):                                          # {{{1
+class Message(object):                                          # {{{1
+
+  """..."""
+
+  __slots__ = []
+
+  def __init__(self, **kw):
+    x = self._defaults(); x.update(kw)
+    for k in self.__slots__:
+      if k in x:
+        super(Message, self).__setattr__(k, x[k]); del x[k]
+    if len(x):
+      raise TypeError("unknown keys: {}".format("".join(x.keys())))
+
+  # private!
+  def _set(self, k, v):
+    super(Message, self).__setattr__(k, v)
+
+  def __setattr__(self, k, v):
+    raise AttributeError("immutable")                           # TODO
+
+  def dict(self):
+    return dict((k, self.__getattribute__(k)) for k in self.__slots__)
+
+  def __repr__(self):
+    return '{}({})'.format(self.__class__.__name__, repr(self.dict()))
+                                                                # }}}1
+
+# TODO
+class Request(Message):                                         # {{{1
 
   """..."""
 
   __slots__ = "method uri version headers body env".split()
 
-  def __init__(self, **kw):
-    pass
+  def __init__(self, data = None, **kw):
+    if data != None:
+      if len(kw):
+        raise TypeError("OOPS")                                 # TODO
+      elif isinstance(data, collections.Mapping):
+        kw = data
+      else:
+        raise TypeError("OOPS")                                 # TODO
+    super(Request, self).__init__(**kw)
+
+  def _defaults(self):
+    return dict(
+      method = "GET", uri = "/", version = "HTTP/1.1",
+      headers = U.idict(), body = "", env = {}
+    )
+
+  # ...
                                                                 # }}}1
 
 # TODO
-class Response(object):                                         # {{{1
+class Response(Message):                                        # {{{1
 
   """..."""
 
   __slots__ = "version status reason headers body".split()
 
-  def __init__(self, **kw):
-    pass
+  def __init__(self, data = None, **kw):
+    if data != None:
+      if len(kw):
+        raise TypeError("OOPS")                                 # TODO
+      elif isinstance(data, collections.Mapping):
+        kw = data
+      elif isinstance(data, tuple):
+        status, headers, body = data
+        kw = dict(status = status, headers = headers, body = body)
+      elif isinstance(data, int):
+        kw = dict(status = data)
+      elif isinstance(data, str) or \
+           isinstance(data, collections.Iterable):
+        kw = dict(body = data)
+      else:
+        raise TypeError("OOPS")                                 # TODO
+    super(Response, self).__init__(**kw)
+    if "reason" not in kw:
+      self._set("reason", HTTP_STATUS_CODES[self.status])
+    if isinstance(self.body, str):
+      self._set("body", (x for x in [self.body]))
+
+  def _defaults(self):
+    return dict(
+      version = "HTTP/1.1", status = 200, headers = U.idict(),
+      body = ""
+    )
+
+  # ...
                                                                 # }}}1
 
 # TODO
