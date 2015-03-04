@@ -2,7 +2,7 @@
 #
 # File        : http_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-01
+# Date        : 2015-03-04
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -13,7 +13,7 @@ import httpony.http as H
 import httpony.stream as S
 import unittest
 
-class Test_http(unittest.TestCase):
+class Test_http(unittest.TestCase):                             # {{{1
 
   def test_requests_w_evaluated_bodies(self):
     r1  = "GET /foo HTTP/1.1\r\nContent-length: 7\r\n\r\n<body1>"
@@ -48,10 +48,9 @@ class Test_http(unittest.TestCase):
         )
       ]
     )
-
+                                                                # }}}1
 
 # ...
-
 
 if __name__ == "__main__":
   unittest.main()

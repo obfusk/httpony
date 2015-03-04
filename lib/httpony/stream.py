@@ -2,7 +2,7 @@
 #
 # File        : httpony/stream.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-02
+# Date        : 2015-03-04
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -14,7 +14,7 @@ import StringIO
 CRLF            = "\r\n"
 DEFAULT_BUFSIZE = 1024
 
-class IStream(object):
+class IStream(object):                                          # {{{1
 
   """input stream"""
 
@@ -55,9 +55,9 @@ class IStream(object):
   def close(self):
     """ close stream"""
     raise NotImplementedError
+                                                                # }}}1
 
-
-class IStreamTake(IStream):
+class IStreamTake(IStream):                                     # {{{1
 
   """..."""
 
@@ -98,9 +98,9 @@ class IStreamTake(IStream):
       if i != -1: return buf + self.read(i + 1)
       buf += self.read(self.bufsize)
     return buf
+                                                                # }}}1
 
-
-class IStreamDrop(IStream):
+class IStreamDrop(IStream):                                     # {{{1
 
   """..."""
 
@@ -118,9 +118,9 @@ class IStreamDrop(IStream):
   def readline(self):
     self._force_take()
     return self.parent.readline()
+                                                                # }}}1
 
-
-class OStream(object):
+class OStream(object):                                          # {{{1
 
   """output stream"""
 
@@ -134,9 +134,9 @@ class OStream(object):
   def close(self):
     """ close stream"""
     raise NotImplementedError
+                                                                # }}}1
 
-
-class IFileStream(IStream):
+class IFileStream(IStream):                                     # {{{1
 
   """file input stream"""
 
@@ -155,9 +155,9 @@ class IFileStream(IStream):
 
   def close(self):
     return self.file.close()
+                                                                # }}}1
 
-
-class OFileStream(OStream):
+class OFileStream(OStream):                                     # {{{1
 
   """file output stream"""
 
@@ -170,18 +170,18 @@ class OFileStream(OStream):
 
   def close(self):
     return self.file.close()
+                                                                # }}}1
 
-
-class IStringStream(IFileStream):
+class IStringStream(IFileStream):                               # {{{1
 
   """string input stream"""
 
   def __init__(self, data, *a, **k):
     file = StringIO.StringIO(data)
     super(IStringStream, self).__init__(file, *a, **k)
+                                                                # }}}1
 
-
-class OStringStream(OFileStream):
+class OStringStream(OFileStream):                               # {{{1
 
   """string output stream"""
 
@@ -191,9 +191,9 @@ class OStringStream(OFileStream):
 
   def getvalue(self):
     return self.file.getvalue()
+                                                                # }}}1
 
-
-class ISocketStream(IFileStream):
+class ISocketStream(IFileStream):                               # {{{1
 
   """socket input stream"""
 
@@ -206,9 +206,9 @@ class ISocketStream(IFileStream):
   def close(self):
     self.sock.shutdown(); self.sock.close()
     return super(ISocketStream, self).close()
+                                                                # }}}1
 
-
-class OSocketStream(OFileStream):
+class OSocketStream(OFileStream):                               # {{{1
 
   """socket output stream"""
 
@@ -221,25 +221,25 @@ class OSocketStream(OFileStream):
   def close(self):
     self.sock.shutdown(); self.sock.close()
     return super(OSocketStream, self).close()
+                                                                # }}}1
 
-
-class IRequestHandlerStream(IFileStream):
+class IRequestHandlerStream(IFileStream):                       # {{{1
 
   """SocketServer request handler input stream"""
 
   def __init__(self, handler, *a, **k):
     self.handler = handler; file = handler.rfile
     super(IRequestHandlerStream, self).__init__(file, *a, **k)
+                                                                # }}}1
 
-
-class ORequestHandlerStream(OFileStream):
+class ORequestHandlerStream(OFileStream):                       # {{{1
 
   """SocketServer request handler output stream"""
 
   def __init__(self, handler, *a, **k):
     self.handler = handler; file = handler.wfile
     super(ORequestHandlerStream, self).__init__(file, *a, **k)
-
+                                                                # }}}1
 
 def interact(istream, ostream, f):
   """map input stream to output stream using a generator function that
@@ -251,7 +251,6 @@ def stripped_lines(x):
   """wraps line iterator, strips trailing '\\r' and '\\n'"""
   for line in x:
     yield line.rstrip("\r\n")
-
 
 # ...
 

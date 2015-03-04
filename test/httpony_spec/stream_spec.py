@@ -2,7 +2,7 @@
 #
 # File        : stream_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-02
+# Date        : 2015-03-04
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -12,13 +12,13 @@
 import httpony.stream as S
 import unittest
 
-class IStringStream_(S.IStringStream):
+class IStringStream_(S.IStringStream):                          # {{{1
 
   def readlines_orig(self):
     return S.IStream.readlines(self)
+                                                                # }}}1
 
-
-class Test_IStringStream(unittest.TestCase):
+class Test_IStringStream(unittest.TestCase):                    # {{{1
 
   def test_read(self):
     s = S.IStringStream("foo bar baz")
@@ -87,9 +87,9 @@ class Test_IStringStream(unittest.TestCase):
     self.assertEqual(list(d), z)
 
   # ...
+                                                                # }}}1
 
-
-class Test_OStringStream(unittest.TestCase):
+class Test_OStringStream(unittest.TestCase):                    # {{{1
 
   def test_write(self):
     s = S.OStringStream()
@@ -99,9 +99,9 @@ class Test_OStringStream(unittest.TestCase):
     self.assertEqual(s.getvalue(), y)
     s.write(z)
     self.assertEqual(s.getvalue(), y + z)
+                                                                # }}}1
 
-
-class Test_stream(unittest.TestCase):
+class Test_stream(unittest.TestCase):                           # {{{1
 
   def test_interact(self):
     si = S.IStringStream("foo\nbar\nbaz\n")
@@ -116,10 +116,9 @@ class Test_stream(unittest.TestCase):
     x = "foo\nbar\r\nbaz\n".splitlines()
     y = ["foo", "bar", "baz"]
     self.assertEqual(list(S.stripped_lines(x)), y)
-
+                                                                # }}}1
 
 # ...
-
 
 if __name__ == "__main__":
   unittest.main()
