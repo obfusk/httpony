@@ -21,11 +21,11 @@ class Test_http(unittest.TestCase):                             # {{{1
     self.assertEqual(
       list(H.evaluate_bodies(H.requests(S.IStringStream(r1 + r2)))),
       [
-        dict(
+        H.Request(
           method = "GET", uri = "/foo", version = "HTTP/1.1",
           headers = { "content-length": "7" }, body = "<body1>"
         ),
-        dict(
+        H.Request(
           method = "GET", uri = "/bar", version = "HTTP/1.1",
           headers = { "content-length": "7" }, body = "<body2>"
         )
@@ -38,17 +38,19 @@ class Test_http(unittest.TestCase):                             # {{{1
     self.assertEqual(
       list(H.evaluate_bodies(H.responses(S.IStringStream(r1 + r2)))),
       [
-        dict(
+        H.Response(
           version = "HTTP/1.1", status = 200, reason = "OK",
           headers = { "content-length": "6" }, body = "<body>"
         ),
-        dict(
+        H.Response(
           version = "HTTP/1.1", status = 404, reason = "Not Found",
           headers = {}, body = ""
         )
       ]
     )
                                                                 # }}}1
+
+# ... TODO ...
 
 # ...
 

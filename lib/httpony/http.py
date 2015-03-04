@@ -76,10 +76,22 @@ class Message(object):                                          # {{{1
     super(Message, self).__setattr__(k, v)
 
   def __setattr__(self, k, v):
-    raise AttributeError("immutable")                           # TODO
+    raise AttributeError(
+      "'{}' object attribute '{}' is read-only".format(
+        self.__class__.__name__, k
+      )
+    )
 
   def dict(self):
     return dict((k, self.__getattribute__(k)) for k in self.__slots__)
+
+  def __eq__(self, rhs):
+    if type(self) is not type(rhs):
+      return False
+    for k in self.__slots__:
+      if self.__getattribute__(k) != rhs.__getattribute__(k):
+        return False
+    return True
 
   def __repr__(self):
     return '{}({})'.format(self.__class__.__name__, repr(self.dict()))
@@ -88,19 +100,23 @@ class Message(object):                                          # {{{1
 # TODO
 class Request(Message):                                         # {{{1
 
-  """..."""
+  """HTTP request"""
 
   __slots__ = "method uri version headers body env".split()
 
   def __init__(self, data = None, **kw):
     if data != None:
       if len(kw):
-        raise TypeError("OOPS")                                 # TODO
+        raise TypeError(
+          "arguments must either be data or keywords, not both"
+        )
       elif isinstance(data, collections.Mapping):
         kw = data
       else:
-        raise TypeError("OOPS")                                 # TODO
+        raise TypeError("data argument must be a mapping")
     super(Request, self).__init__(**kw)
+    if not isinstance(self.headers, U.idict):
+      self._set("headers", U.idict(self.headers))
 
   def _defaults(self):
     return dict(
@@ -114,14 +130,16 @@ class Request(Message):                                         # {{{1
 # TODO
 class Response(Message):                                        # {{{1
 
-  """..."""
+  """HTTP response"""
 
   __slots__ = "version status reason headers body".split()
 
   def __init__(self, data = None, **kw):
     if data != None:
       if len(kw):
-        raise TypeError("OOPS")                                 # TODO
+        raise TypeError(
+          "arguments must either be data or keywords, not both"
+        )
       elif isinstance(data, collections.Mapping):
         kw = data
       elif isinstance(data, tuple):
@@ -133,12 +151,19 @@ class Response(Message):                                        # {{{1
            isinstance(data, collections.Iterable):
         kw = dict(body = data)
       else:
-        raise TypeError("OOPS")                                 # TODO
+        raise TypeError(
+          "data argument must be a " +
+          "mapping, 3-tuple, int, str, or iterable"
+        )
     super(Response, self).__init__(**kw)
     if "reason" not in kw:
       self._set("reason", HTTP_STATUS_CODES[self.status])
+    if not isinstance(self.headers, U.idict):
+      self._set("headers", U.idict(self.headers))
     if isinstance(self.body, str):
       self._set("body", (x for x in [self.body]))
+    elif isinstance(self.body, S.IStream):
+      self._set("body", self.body.readchunks())
 
   def _defaults(self):
     return dict(
@@ -149,11 +174,10 @@ class Response(Message):                                        # {{{1
   # ...
                                                                 # }}}1
 
-# TODO
 def generic_messages(si):                                       # {{{1
-  """..."""
+  """iterate over stream of HTTP messages (requests or responses)"""
   while True:
-    headers = {}
+    headers = U.idict()
     while True:
       start_line = si.readline()
       if start_line == "": return
@@ -162,27 +186,25 @@ def generic_messages(si):                                       # {{{1
       line = si.readline()
       if line == "": return
       if line == S.CRLF: break
-      k, v = line.split(":", 1); headers[k.lower()] = v.strip()
+      k, v = line.split(":", 1); headers[k] = v.strip()
     yield dict(
       start_line = start_line.rstrip(S.CRLF), headers = headers,
       body = si
     )
                                                                 # }}}1
 
-# TODO
 def split_body(msg, bufsize):
-  """..."""
+  """split stream into body and rest"""
   cl = int(msg["headers"].get("content-length", 0))
   return msg["body"].split(cl, bufsize)
 
-# TODO
 def requests(si, bufsize = S.DEFAULT_BUFSIZE):                  # {{{1
-  """..."""
+  """iterate over HTTP requests"""
   for msg in generic_messages(si):
     method, uri, version = msg["start_line"].split(" ")
     co = msg["headers"].get("connection", "keep-alive").lower()
     body, si = split_body(msg, bufsize)
-    yield dict(
+    yield Request(
       method = method, uri = uri, version = version,
       headers = msg["headers"], body = body
     )
@@ -191,13 +213,12 @@ def requests(si, bufsize = S.DEFAULT_BUFSIZE):                  # {{{1
       return
                                                                 # }}}1
 
-# TODO
 def responses(si, bufsize = S.DEFAULT_BUFSIZE):                 # {{{1
-  """..."""
+  """iterate over HTTP responses"""
   for msg in generic_messages(si):
     version, status, reason = msg["start_line"].split(" ", 2)
     body, si = split_body(msg, bufsize)
-    yield dict(
+    yield Response(
       version = version, status = int(status), reason = reason,
       headers = msg["headers"], body = body
     )
@@ -205,10 +226,10 @@ def responses(si, bufsize = S.DEFAULT_BUFSIZE):                 # {{{1
 
 # TODO
 def evaluate_bodies(xs):
-  """..."""
+  """evaluate bodies in message stream"""
   for msg in xs:
-    msg["body"] = msg["body"].read()
-    yield msg
+    m = msg.dict(); m["body"] = "".join(m["body"])
+    yield msg.__class__(m)
 
 # ...
 
