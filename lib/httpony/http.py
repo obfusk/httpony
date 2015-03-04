@@ -59,7 +59,7 @@ HTTP_STATUS_CODES = {                                           # {{{1
 # TODO
 class Message(object):                                          # {{{1
 
-  """..."""
+  """message (base class)"""
 
   __slots__ = []
 

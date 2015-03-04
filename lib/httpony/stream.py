@@ -59,7 +59,7 @@ class IStream(object):                                          # {{{1
 
 class IStreamTake(IStream):                                     # {{{1
 
-  """..."""
+  """first part (n bytes) of split stream"""
 
   def __init__(self, parent, n, bufsize = DEFAULT_BUFSIZE, *a, **k):
     self.parent = parent; self.n = n; self.bufsize = bufsize
@@ -67,11 +67,11 @@ class IStreamTake(IStream):                                     # {{{1
     super(IStreamTake, self).__init__(*a, **k)
 
   def done(self):
-    """..."""
+    """has this part been read entirely?"""
     return self.n == 0
 
   def peek(self, size = None):
-    """..."""
+    """peek at first size bytes (read w/o consume)"""
     if size == -1   : size = self.n
     if size == None : size = self.bufsize
     m = min(size, self.n)
@@ -102,7 +102,7 @@ class IStreamTake(IStream):                                     # {{{1
 
 class IStreamDrop(IStream):                                     # {{{1
 
-  """..."""
+  """rest of split stream"""
 
   def __init__(self, parent, take, *a, **k):
     self.parent = parent; self.take = take

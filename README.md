@@ -24,7 +24,9 @@
 
 ## Specs & Docs
 
-...
+```bash
+$ make test
+```
 
 ## TODO
 
