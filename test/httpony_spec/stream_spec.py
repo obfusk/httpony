@@ -116,6 +116,11 @@ class Test_stream(unittest.TestCase):                           # {{{1
     x = "foo\nbar\r\nbaz\n".splitlines()
     y = ["foo", "bar", "baz"]
     self.assertEqual(list(S.stripped_lines(x)), y)
+
+  def test_unstripped_lines(self):
+    x = "foo bar baz".split()
+    y = ["foo\r\n", "bar\r\n", "baz\r\n"]
+    self.assertEqual(list(S.unstripped_lines(x)), y)
                                                                 # }}}1
 
 # ...

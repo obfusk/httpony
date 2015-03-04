@@ -247,10 +247,13 @@ def interact(istream, ostream, f):
   for chunk in f(istream):
     ostream.write(chunk)
 
-def stripped_lines(x):
+def stripped_lines(lines):
   """wraps line iterator, strips trailing '\\r' and '\\n'"""
-  for line in x:
-    yield line.rstrip("\r\n")
+  return (line.rstrip(CRLF) for line in lines)
+
+def unstripped_lines(lines):
+  """wraps line iterator, adds trailing '\\r\\n'"""
+  return (line + CRLF for line in lines)
 
 # ...
 

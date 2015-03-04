@@ -76,7 +76,20 @@ class Message(object):                                          # {{{1
     elif isinstance(self.body, S.IStream):
       self._set("body", self.body.readchunks())
 
+  def unparse(self):
+    """request/response as string"""
+    return "".join(self.unparse_chunked())
+
+  def unparse_chunked(self):
+    """iterate over chunks of request/response as string"""
+    start_line = self.unparse_start_line()
+    headers = ["{}: {}".format(k, v)
+               for (k,v) in self.headers.iteritems()]
+    yield "".join(S.unstripped_lines([start_line] + headers + [""]))
+    for chunk in self.body: yield chunk
+
   def force_body(self):
+    """force body into a 1-tuple and return its only element"""
     if not (isinstance(self.body, tuple) and len(self.body) == 1):
       self._set("body", ("".join(self.body),))
     return self.body[0]
@@ -86,11 +99,18 @@ class Message(object):                                          # {{{1
     super(Message, self).__setattr__(k, v)
 
   def __setattr__(self, k, v):
-    raise AttributeError(
-      "'{}' object attribute '{}' is read-only".format(
-        self.__class__.__name__, k
+    if k in self.__slots__:
+      raise AttributeError(
+        "'{}' object attribute '{}' is read-only".format(
+          self.__class__.__name__, k
+        )
       )
-    )
+    else:
+      raise AttributeError(
+        "'{}' object has no attribute '{}'".format(
+          self.__class__.__name__, k
+        )
+      )
 
   def iteritems(self):
     return ((k, self.__getattribute__(k)) for k in self.__slots__)
@@ -106,8 +126,11 @@ class Message(object):                                          # {{{1
     return dict(self.iteritems()).__cmp__(dict(rhs.iteritems()))
 
   def __repr__(self):
-    return '{}({})'.format(self.__class__.__name__,
-                           repr(dict(self.iteritems())))
+    return '{}({})'.format(
+      self.__class__.__name__,
+      ", ".join("{} = {}".format(k, repr(v))
+                for (k,v) in self.iteritems())
+    )
                                                                 # }}}1
 
 class Request(Message):                                         # {{{1
@@ -127,13 +150,14 @@ class Request(Message):                                         # {{{1
         raise TypeError("data argument must be a mapping")
     super(Request, self).__init__(**kw)
 
+  def unparse_start_line(self):
+    return "{} {} {}".format(self.method, self.uri, self.version)
+
   def _defaults(self):
     return dict(
       method = "GET", uri = "/", version = "HTTP/1.1",
       headers = U.idict(), body = "", env = {}
     )
-
-  # ...
                                                                 # }}}1
 
 class Response(Message):                                        # {{{1
@@ -164,13 +188,14 @@ class Response(Message):                                        # {{{1
     if "reason" not in kw:
       self._set("reason", HTTP_STATUS_CODES[self.status])
 
+  def unparse_start_line(self):
+    return "{} {} {}".format(self.version, self.status, self.reason)
+
   def _defaults(self):
     return dict(
       version = "HTTP/1.1", status = 200, headers = U.idict(),
       body = ""
     )
-
-  # ...
                                                                 # }}}1
 
 def generic_messages(si):                                       # {{{1
