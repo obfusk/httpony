@@ -15,7 +15,7 @@ import re
 RE_TYPE = type(re.compile(""))
 
 # TODO
-class HandlerBase(object):                                      # {{{1
+class _HandlerBase(object):                                     # {{{1
 
   """request handler base class"""
 
@@ -25,49 +25,58 @@ class HandlerBase(object):                                      # {{{1
   # TODO
   def __call__(self, request):
     """handle request"""
-    # ...
+    self.request  = request
+    self.params   = {}
     handler = self._match(request)
-    # ...
-    return handler(request)
+    if handler is None: return None                             # TODO
+    self.response = handler(request)
+    return self.response
 
   # TODO
   def _match(self, request):
     for h in self._handlers:
-      methods, uri_pattern, f = h
+      methods, uri_pattern, handler = h
       if request.method in methods:
         m = uri_pattern.search(self, request.uri)
         if m is not None:
-          a = m.groups(); d = m.groupdict()
-          pass # TODO
+          self.route_args   = m.groups()
+          self.route_params = m.groupdict()
+          self.params.update(self.route_params)
+          handler(self, request, *self.route_args,
+                  **self.route_params)
     return None
 
   # TODO
   @classmethod
-  def request(cls, methods, uri_pattern):
-    """handle request of the specified methods and pattern"""
-    def request_(meth):
-      if cls is HandlerBase:
-        raise TypeError("not a subclass of HandlerBase")        # TODO
-      if not isinstance(uri_pattern, RE_TYPE):
+  def request(cls, methods, uri_pattern):                       # {{{2
+    """create request handler for the specified methods and pattern"""
+    def decorate(meth):
+      if cls is _HandlerBase:
+        raise TypeError("not a subclass of _HandlerBase")
+      if isinstance(uri_pattern, RE_TYPE):
+        p = uri_pattern
+      else:
         def f(x):
-          if re.search("\A:\w+\Z", x):
+          if re.search("\A:[A-Za-z_][A-Za-z0-9_]+\Z", x):
             return "(?P<" + x[1:] + ">[^/]+)"
           elif x == "*":
-            return ".*"
+            return "(.*)"
           else:
             return re.escape(x)
+        # fed
         p = re.compile(
           "\A" + "/".join(map(f, uri_pattern.split("/"))) + "\Z"
         )
-      else:
-        p = uri_pattern
-      def handle(self, request):
+      def handle(self, request, *a, **k):
         print "HANDLING", request                               # TODO
-        return meth(self, request)
+        return meth(self, request, *a, **k)
+      # fed
       if not hasattr(cls, "_handlers"): cls._handlers = []
       cls._handlers += [(methods, p, handle)]
       return meth
-    return request_
+    # fed
+    return decorate
+                                                                # }}}2
 
   @classmethod
   def get(cls, uri_pattern):
@@ -80,7 +89,7 @@ class HandlerBase(object):                                      # {{{1
                                                                 # }}}1
 
 def Handler(name = ""):
-  return type("Handler", (HandlerBase,), {})
+  return type(name + "Handler", (_HandlerBase,), {})
 
 # ...
 

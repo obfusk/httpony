@@ -66,8 +66,8 @@ class URI(U.Immutable):                                         # {{{1
 
   """HTTP URI"""
 
-  __slots__ = "scheme user pass host port path query fragment uri" \
-              .split()
+  __slots__ = "scheme username password host port path \
+               query fragment uri".split()
 
   def __init__(self, uri):
     if not uri.startswith(HTTP_SCHEME + "://"):
@@ -76,22 +76,19 @@ class URI(U.Immutable):                                         # {{{1
     q = urlparse.parse_qs(u.query, True, True) if u.query else {}
     for k in q:
       if len(q[k]) == 1: q[k] = q[k][0]
-    self._Immutable___set("scheme"  , u.scheme)
-    self._Immutable___set("user"    , u.username)
-    self._Immutable___set("pass"    , u.password)
-    self._Immutable___set("host"    , u.hostname)
-    self._Immutable___set("port"    , u.port or HTTP_DEFAULT_PORT)
-    self._Immutable___set("path"    , u.path)
-    self._Immutable___set("query"   , q)
-    self._Immutable___set("fragment", u.fragment)
-    self._Immutable___set("uri"     , uri)
+    super(URI, self).__init__(
+      scheme = u.scheme, username = u.username, password = u.password,
+      host = u.hostname, port = u.port or HTTP_DEFAULT_PORT,
+      path = u.path, query = q, fragment = u.fragment, uri = uri
+    )
 
+  @property
   def relative_uri(self):
     return self.uri[len(HTTP_SCHEME + "://"):]
 
   def __eq__(self, rhs):
     if isinstance(rhs, str):
-      return self.uri == rhs or self.relative_uri() == rhs
+      return self.uri == rhs or self.relative_uri == rhs
     return super(URI, self).__eq__(rhs)
 
   # ...
@@ -102,12 +99,7 @@ class Message(U.Immutable):                                     # {{{1
   """HTTP request or response message (base class)"""
 
   def __init__(self, **kw):
-    x = self._defaults(); x.update(kw)
-    for k in self.__slots__:
-      if k in x:
-        self._Immutable___set(k, x[k]); del x[k]
-    if len(x):
-      raise TypeError("unknown keys: {}".format("".join(x.keys())))
+    super(Message, self).__init__(self._defaults(), **kw)
     if not isinstance(self.headers, U.idict):
       self._Immutable___set("headers", U.idict(self.headers))
     if isinstance(self.body, str):
@@ -154,7 +146,7 @@ class Request(Message):                                         # {{{1
       self._Immutable___set("uri", URI(self.uri))
 
   def unparse_start_line(self):
-    return "{} {} {}".format(self.method, self.uri.relative_uri(),
+    return "{} {} {}".format(self.method, self.uri.relative_uri,
                              self.version)
 
   def _defaults(self):

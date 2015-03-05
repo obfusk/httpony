@@ -12,7 +12,7 @@
 import httpony.util as U
 import unittest
 
-class Test_util(unittest.TestCase):                             # {{{1
+class Test_idict(unittest.TestCase):                            # {{{1
 
   def test_get(self):
     x = U.idict(Foo = 42, Bar = 37)
@@ -87,7 +87,68 @@ class Test_util(unittest.TestCase):                             # {{{1
     self.assertEqual(str(x), "idict({'x': 42})")
                                                                 # }}}1
 
-# TODO: Test_Immutable
+class X(U.Immutable):
+  __slots__ = "foo bar baz".split()
+
+class Y(X):
+  args_are_mandatory = True
+
+class Test_Immutable(unittest.TestCase):                        # {{{1
+
+  def test_init_ok(self):
+    x = X(foo = 42)
+    self.assertEqual(x.foo, 42)
+
+  def test_init_unknown(self):
+    with self.assertRaisesRegexp(TypeError, "unknown keys"):
+      X(spam = 99)
+
+  def test_init_missing(self):
+    with self.assertRaisesRegexp(TypeError, "missing keys"):
+      Y(foo = 42)
+
+  def test_no_setattr(self):
+    x = X()
+    with self.assertRaisesRegexp(AttributeError, "'X' object " +
+                                 "attribute 'foo' is read-only"):
+      x.foo = 99
+
+  def test_no_setattr_new(self):
+    x = X()
+    with self.assertRaisesRegexp(AttributeError, "'X' object " +
+                                 "has no attribute 'spam'"):
+      x.spam = 99
+
+  def test_iteritems(self):
+    x = X(foo = 42, bar = 37)
+    self.assertEqual(dict(x.iteritems()),
+                     dict(foo = 42, bar = 37, baz = None))
+
+  def test_eq(self):
+    x = X(foo = "foo")
+    y = X(foo = "bar")
+    self.assertEqual(x, x)
+    self.assertNotEqual(x, y)
+
+  def test_cmp(self):
+    x = X(foo = "foo")
+    y = X(foo = "bar")
+    self.assertGreater(x, y)
+    self.assertGreaterEqual(x, y)
+    self.assertGreaterEqual(x, x)
+    self.assertLess(y, x)
+    self.assertLessEqual(y, x)
+
+  def test_repr(self):
+    x = X(foo = 42, bar = "hi!")
+    y = [("foo", 42), ("bar", "hi!"), ("baz", None)]
+    self.assertEqual(
+      repr(x),
+      "X({})".format(
+        ", ".join("{} = {}".format(k, repr(v)) for (k,v) in y)
+      )
+    )
+                                                                # }}}1
 
 # ...
 

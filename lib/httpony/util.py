@@ -77,6 +77,21 @@ class Immutable(object):                                        # {{{1
 
   __slots__ = []
 
+  args_are_mandatory = False
+
+  def __init__(self, data = None, **kw):
+    x = data if data is not None else {}; x.update(kw)
+    ks = set(x.keys()); ss = set(self.__slots__)
+    for k in self.__slots__:
+      if k in x:
+        self._Immutable___set(k, x[k]); del x[k]
+      else:
+        self._Immutable___set(k, None)
+    if len(x):
+      raise TypeError("unknown keys: {}".format(", ".join(x.keys())))
+    if self.args_are_mandatory and ks != ss:
+      raise TypeError("missing keys: {}".format(", ".join(ss - ks)))
+
   def ___set(self, k, v):
     super(Immutable, self).__setattr__(k, v)
 

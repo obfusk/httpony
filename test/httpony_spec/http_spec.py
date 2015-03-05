@@ -2,7 +2,7 @@
 #
 # File        : http_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-04
+# Date        : 2015-03-05
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -84,20 +84,6 @@ class Test_Request(unittest.TestCase):                          # {{{1
     self.assertIsInstance(x.body, tuple)
     self.assertEqual(x.body, ("foobarbaz",))
 
-  def test_no_setattr(self):
-    x = H.Request()
-    with self.assertRaisesRegexp(AttributeError,
-                                 "'Request' object " +
-                                 "attribute 'body' is read-only"):
-      x.body = 99
-
-  def test_no_setattr_new(self):
-    x = H.Request()
-    with self.assertRaisesRegexp(AttributeError,
-                                 "'Request' object " +
-                                 "has no attribute 'foo'"):
-      x.foo = 99
-
   def test_eq(self):
     x = H.Request(body = "foo")
     y = H.Request(body = "bar")
@@ -121,8 +107,7 @@ class Test_Request(unittest.TestCase):                          # {{{1
     self.assertEqual(
       repr(x),
       "Request({})".format(
-        ", ".join("{} = {}".format(k, repr(v))
-                  for (k,v) in y)
+        ", ".join("{} = {}".format(k, repr(v)) for (k,v) in y)
       )
     )
 
@@ -138,8 +123,8 @@ class Test_Request(unittest.TestCase):                          # {{{1
 
 class Test_Response(unittest.TestCase):                         # {{{1
 
-  # NB: the tests for Request cover most of the common functionality
-  # provided by Message
+  # NB: the tests for Immutable and Request cover most of the common
+  # functionality provided by Message
 
   def test_init_kwds(self):
     x = H.Response(status = 404, headers = dict(Foo = "bar"))
