@@ -62,6 +62,7 @@ HTTP_SCHEME       = "http"
 
 HTTP_METHODS      = "OPTIONS GET HEAD POST PUT DELETE".split()
 
+# TODO
 class URI(U.Immutable):                                         # {{{1
 
   """HTTP URI"""
@@ -83,12 +84,17 @@ class URI(U.Immutable):                                         # {{{1
     )
 
   @property
-  def relative_uri(self):
+  def schemeless_uri(self):
     return self.uri[len(HTTP_SCHEME + "://"):]
+
+  @property
+  def relative_uri(self):
+    raise NotImplementedError                                   # TODO
 
   def __eq__(self, rhs):
     if isinstance(rhs, str):
-      return self.uri == rhs or self.relative_uri == rhs
+      return self.uri == rhs or self.schemeless_uri == rhs or \
+             self.relative_uri == rhs
     return super(URI, self).__eq__(rhs)
 
   # ...

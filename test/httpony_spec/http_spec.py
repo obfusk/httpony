@@ -14,7 +14,25 @@ import httpony.stream as S
 import httpony.util as U
 import unittest
 
-# TODO: Test_URI
+# TODO
+class Test_URI(unittest.TestCase):                              # {{{1
+
+  def test_init(self):
+    x = H.URI("example.com:666/foo?x=42#bar")
+    self.assertEqual(x.scheme         , "http")
+    self.assertEqual(x.username       , None)
+    self.assertEqual(x.password       , None)
+    self.assertEqual(x.host           , "example.com")
+    self.assertEqual(x.port           , 666)
+    self.assertEqual(x.path           , "/foo")
+    self.assertEqual(x.query          , dict(x = 42))
+    self.assertEqual(x.fragment       , "bar")
+    self.assertEqual(x.uri            , "...")
+    self.assertEqual(x.schemeless_uri , "...")
+    self.assertEqual(x.relative_uri   , "...")
+
+  # ...
+                                                                # }}}1
 
 class Test_Request(unittest.TestCase):                          # {{{1
 
