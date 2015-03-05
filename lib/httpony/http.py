@@ -2,7 +2,7 @@
 #
 # File        : httpony/http.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-04
+# Date        : 2015-03-05
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -12,6 +12,7 @@
 from . import stream as S
 from . import util as U
 import collections
+import urlparse
 
 HTTP_STATUS_CODES = {                                           # {{{1
   100 : "Continue",
@@ -56,25 +57,63 @@ HTTP_STATUS_CODES = {                                           # {{{1
   505 : "HTTP Version Not Supported"
 }                                                               # }}}1
 
-class Message(object):                                          # {{{1
+HTTP_DEFAULT_PORT = 80
+HTTP_SCHEME       = "http"
+
+HTTP_METHODS      = "OPTIONS GET HEAD POST PUT DELETE".split()
+
+class URI(U.Immutable):                                         # {{{1
+
+  """HTTP URI"""
+
+  __slots__ = "scheme user pass host port path query fragment uri" \
+              .split()
+
+  def __init__(self, uri):
+    if not uri.startswith(HTTP_SCHEME + "://"):
+      uri = HTTP_SCHEME + "://" + uri
+    u = urlparse.urlparse(uri)
+    q = urlparse.parse_qs(u.query, True, True) if u.query else {}
+    for k in q:
+      if len(q[k]) == 1: q[k] = q[k][0]
+    self._Immutable___set("scheme"  , u.scheme)
+    self._Immutable___set("user"    , u.username)
+    self._Immutable___set("pass"    , u.password)
+    self._Immutable___set("host"    , u.hostname)
+    self._Immutable___set("port"    , u.port or HTTP_DEFAULT_PORT)
+    self._Immutable___set("path"    , u.path)
+    self._Immutable___set("query"   , q)
+    self._Immutable___set("fragment", u.fragment)
+    self._Immutable___set("uri"     , uri)
+
+  def relative_uri(self):
+    return self.uri[len(HTTP_SCHEME + "://"):]
+
+  def __eq__(self, rhs):
+    if isinstance(rhs, str):
+      return self.uri == rhs or self.relative_uri() == rhs
+    return super(URI, self).__eq__(rhs)
+
+  # ...
+                                                                # }}}1
+
+class Message(U.Immutable):                                     # {{{1
 
   """HTTP request or response message (base class)"""
-
-  __slots__ = []
 
   def __init__(self, **kw):
     x = self._defaults(); x.update(kw)
     for k in self.__slots__:
       if k in x:
-        self._set(k, x[k]); del x[k]
+        self._Immutable___set(k, x[k]); del x[k]
     if len(x):
       raise TypeError("unknown keys: {}".format("".join(x.keys())))
     if not isinstance(self.headers, U.idict):
-      self._set("headers", U.idict(self.headers))
+      self._Immutable___set("headers", U.idict(self.headers))
     if isinstance(self.body, str):
-      self._set("body", (self.body,))
+      self._Immutable___set("body", (self.body,))
     elif isinstance(self.body, S.IStream):
-      self._set("body", self.body.readchunks())
+      self._Immutable___set("body", self.body.readchunks())
 
   def unparse(self):
     """request/response as string"""
@@ -91,46 +130,8 @@ class Message(object):                                          # {{{1
   def force_body(self):
     """force body into a 1-tuple and return its only element"""
     if not (isinstance(self.body, tuple) and len(self.body) == 1):
-      self._set("body", ("".join(self.body),))
+      self._Immutable___set("body", ("".join(self.body),))
     return self.body[0]
-
-  # private!
-  def _set(self, k, v):
-    super(Message, self).__setattr__(k, v)
-
-  def __setattr__(self, k, v):
-    if k in self.__slots__:
-      raise AttributeError(
-        "'{}' object attribute '{}' is read-only".format(
-          self.__class__.__name__, k
-        )
-      )
-    else:
-      raise AttributeError(
-        "'{}' object has no attribute '{}'".format(
-          self.__class__.__name__, k
-        )
-      )
-
-  def iteritems(self):
-    return ((k, self.__getattribute__(k)) for k in self.__slots__)
-
-  def __eq__(self, rhs):
-    if not isinstance(rhs, type(self)):
-      return NotImplemented
-    return dict(self.iteritems()) == dict(rhs.iteritems())
-
-  def __cmp__(self, rhs):
-    if not isinstance(rhs, type(self)):
-      return NotImplemented
-    return dict(self.iteritems()).__cmp__(dict(rhs.iteritems()))
-
-  def __repr__(self):
-    return '{}({})'.format(
-      self.__class__.__name__,
-      ", ".join("{} = {}".format(k, repr(v))
-                for (k,v) in self.iteritems())
-    )
                                                                 # }}}1
 
 class Request(Message):                                         # {{{1
@@ -140,7 +141,7 @@ class Request(Message):                                         # {{{1
   __slots__ = "method uri version headers body env".split()
 
   def __init__(self, data = None, **kw):
-    if data != None:
+    if data is not None:
       if len(kw):
         raise TypeError("arguments must either be " +
                         "data or keywords, not both")
@@ -149,9 +150,12 @@ class Request(Message):                                         # {{{1
       else:
         raise TypeError("data argument must be a mapping")
     super(Request, self).__init__(**kw)
+    if not isinstance(self.uri, URI):
+      self._Immutable___set("uri", URI(self.uri))
 
   def unparse_start_line(self):
-    return "{} {} {}".format(self.method, self.uri, self.version)
+    return "{} {} {}".format(self.method, self.uri.relative_uri(),
+                             self.version)
 
   def _defaults(self):
     return dict(
@@ -167,7 +171,7 @@ class Response(Message):                                        # {{{1
   __slots__ = "version status reason headers body".split()
 
   def __init__(self, data = None, **kw):
-    if data != None:
+    if data is not None:
       if len(kw):
         raise TypeError("arguments must either be "
                         "data or keywords, not both")
@@ -186,7 +190,7 @@ class Response(Message):                                        # {{{1
                         "mapping, 3-tuple, int, str, or iterable")
     super(Response, self).__init__(**kw)
     if "reason" not in kw:
-      self._set("reason", HTTP_STATUS_CODES[self.status])
+      self._Immutable___set("reason", HTTP_STATUS_CODES[self.status])
 
   def unparse_start_line(self):
     return "{} {} {}".format(self.version, self.status, self.reason)

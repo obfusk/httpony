@@ -2,7 +2,7 @@
 #
 # File        : httpony/util.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-04
+# Date        : 2015-03-05
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -17,7 +17,7 @@ class idict(collections.MutableMapping):                        # {{{1
 
   def __init__(self, data=None, **kw):
     self._data = {}
-    if data != None: self.update(data)
+    if data is not None: self.update(data)
     self.update(**kw)
 
   # implement abstract methods ...
@@ -68,6 +68,50 @@ class idict(collections.MutableMapping):                        # {{{1
     return '{}({})'.format(
       self.__class__.__name__,
       repr(dict(self.iteritems()))
+    )
+                                                                # }}}1
+
+class Immutable(object):                                        # {{{1
+
+  """immutable base class"""
+
+  __slots__ = []
+
+  def ___set(self, k, v):
+    super(Immutable, self).__setattr__(k, v)
+
+  def __setattr__(self, k, v):
+    if k in self.__slots__:
+      raise AttributeError(
+        "'{}' object attribute '{}' is read-only".format(
+          self.__class__.__name__, k
+        )
+      )
+    else:
+      raise AttributeError(
+        "'{}' object has no attribute '{}'".format(
+          self.__class__.__name__, k
+        )
+      )
+
+  def iteritems(self):
+    return ((k, getattr(self, k)) for k in self.__slots__)
+
+  def __eq__(self, rhs):
+    if not isinstance(rhs, type(self)):
+      return NotImplemented
+    return dict(self.iteritems()) == dict(rhs.iteritems())
+
+  def __cmp__(self, rhs):
+    if not isinstance(rhs, type(self)):
+      return NotImplemented
+    return dict(self.iteritems()).__cmp__(dict(rhs.iteritems()))
+
+  def __repr__(self):
+    return '{}({})'.format(
+      self.__class__.__name__,
+      ", ".join("{} = {}".format(k, repr(v))
+                for (k,v) in self.iteritems())
     )
                                                                 # }}}1
 

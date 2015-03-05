@@ -2,7 +2,7 @@
 #
 # File        : util_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-04
+# Date        : 2015-03-05
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -86,6 +86,8 @@ class Test_util(unittest.TestCase):                             # {{{1
     x = U.idict(x = 42)
     self.assertEqual(str(x), "idict({'x': 42})")
                                                                 # }}}1
+
+# TODO: Test_Immutable
 
 # ...
 

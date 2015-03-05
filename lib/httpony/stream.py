@@ -73,14 +73,14 @@ class IStreamTake(IStream):                                     # {{{1
   def peek(self, size = None):
     """peek at first size bytes (read w/o consume)"""
     if size == -1   : size = self.n
-    if size == None : size = self.bufsize
+    if size is None : size = self.bufsize
     m = min(size, self.n)
     if m > len(self.buf):
       self.buf += self.parent.read(m - len(self.buf))
     return self.buf[:m]
 
   def read(self, size = None):
-    if size == None: size = self.n
+    if size is None: size = self.n
     m = min(size, self.n); self.n -= m
     if m <= len(self.buf):
       buf = self.buf; self.buf = buf[m:]

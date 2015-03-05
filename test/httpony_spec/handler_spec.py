@@ -2,7 +2,7 @@
 #
 # File        : handler_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-01
+# Date        : 2015-03-05
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+

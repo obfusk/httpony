@@ -14,6 +14,8 @@ import httpony.stream as S
 import httpony.util as U
 import unittest
 
+# TODO: Test_URI
+
 class Test_Request(unittest.TestCase):                          # {{{1
 
   def test_init_empty(self):
@@ -113,8 +115,9 @@ class Test_Request(unittest.TestCase):                          # {{{1
 
   def test_repr(self):
     x = H.Request(body = "<body>")
-    y = [("method", "GET"), ("uri", "/"), ("version", "HTTP/1.1"),
-         ("headers", U.idict()), ("body", ("<body>",)), ("env", {})]
+    y = [("method", "GET"), ("uri", H.URI("/")),
+         ("version", "HTTP/1.1"), ("headers", U.idict()),
+         ("body", ("<body>",)), ("env", {})]
     self.assertEqual(
       repr(x),
       "Request({})".format(
