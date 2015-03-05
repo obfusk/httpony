@@ -62,13 +62,12 @@ HTTP_SCHEME       = "http"
 
 HTTP_METHODS      = "OPTIONS GET HEAD POST PUT DELETE".split()
 
-# TODO
 class URI(U.Immutable):                                         # {{{1
 
   """HTTP URI"""
 
   __slots__ = "scheme username password host port path \
-               query fragment uri".split()
+               query query_params fragment".split()
 
   def __init__(self, uri):
     if not uri.startswith(HTTP_SCHEME + "://"):
@@ -78,26 +77,45 @@ class URI(U.Immutable):                                         # {{{1
     for k in q:
       if len(q[k]) == 1: q[k] = q[k][0]
     super(URI, self).__init__(
-      scheme = u.scheme, username = u.username, password = u.password,
-      host = u.hostname, port = u.port or HTTP_DEFAULT_PORT,
-      path = u.path, query = q, fragment = u.fragment, uri = uri
+      scheme = u.scheme, username = u.username,
+      password = u.password, host = u.hostname or "",
+      port = u.port or HTTP_DEFAULT_PORT, path = u.path or "/",
+      query = u.query, query_params = q, fragment = u.fragment
     )
 
   @property
+  def uri_with_fragment(self):
+    s = self.uri
+    if self.fragment: s += "#" + self.fragment
+    return s
+
+  @property
+  def uri(self):
+    return self.scheme + "://" + self.schemeless_uri
+
+  @property
   def schemeless_uri(self):
-    return self.uri[len(HTTP_SCHEME + "://"):]
+    s = self.host or ""
+    if self.port and self.port != HTTP_DEFAULT_PORT:
+      s += ":" + str(self.port)
+    s += self.relative_uri
+    if self.password:
+      s = ":" + self.password + "@" + s
+      if self.username: s = self.username + s
+    elif self.username:
+      s = self.username + "@" + s
+    return s
 
   @property
   def relative_uri(self):
-    raise NotImplementedError                                   # TODO
+    s = self.path
+    if self.query: s += "?" + self.query
+    return s
 
   def __eq__(self, rhs):
     if isinstance(rhs, str):
-      return self.uri == rhs or self.schemeless_uri == rhs or \
-             self.relative_uri == rhs
+      rhs = type(self)(rhs)
     return super(URI, self).__eq__(rhs)
-
-  # ...
                                                                 # }}}1
 
 class Message(U.Immutable):                                     # {{{1

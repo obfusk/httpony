@@ -14,24 +14,47 @@ import httpony.stream as S
 import httpony.util as U
 import unittest
 
-# TODO
 class Test_URI(unittest.TestCase):                              # {{{1
 
-  def test_init(self):
-    x = H.URI("example.com:666/foo?x=42#bar")
-    self.assertEqual(x.scheme         , "http")
-    self.assertEqual(x.username       , None)
-    self.assertEqual(x.password       , None)
-    self.assertEqual(x.host           , "example.com")
-    self.assertEqual(x.port           , 666)
-    self.assertEqual(x.path           , "/foo")
-    self.assertEqual(x.query          , dict(x = 42))
-    self.assertEqual(x.fragment       , "bar")
-    self.assertEqual(x.uri            , "...")
-    self.assertEqual(x.schemeless_uri , "...")
-    self.assertEqual(x.relative_uri   , "...")
+  def setUp(self):
+    self.a = "example.com:666/foo?x=42"
+    self.b = "http://foo@example.com/foo?x=42&y=37&x=99#bar"
+    self.x = H.URI(self.a)
+    self.y = H.URI(self.b)
 
-  # ...
+  def test_attrs(self):
+    self.assertEqual(self.x.scheme        , "http")
+    self.assertEqual(self.x.username      , None)
+    self.assertEqual(self.x.password      , None)
+    self.assertEqual(self.x.host          , "example.com")
+    self.assertEqual(self.x.port          , 666)
+    self.assertEqual(self.x.path          , "/foo")
+    self.assertEqual(self.x.query         , "x=42")
+    self.assertEqual(self.x.query_params  , dict(x = "42"))
+    self.assertEqual(self.x.fragment      , "")
+
+    self.assertEqual(self.y.scheme        , "http")
+    self.assertEqual(self.y.username      , "foo")
+    self.assertEqual(self.y.password      , None)
+    self.assertEqual(self.y.host          , "example.com")
+    self.assertEqual(self.y.port          , 80)
+    self.assertEqual(self.y.path          , "/foo")
+    self.assertEqual(self.y.query         , "x=42&y=37&x=99")
+    self.assertEqual(self.y.query_params  ,
+                     dict(x = ["42", "99"], y = "37"))
+    self.assertEqual(self.y.fragment      , "bar")
+
+  def test_props(self):
+    self.assertEqual(self.x.uri, "http://" + self.a)
+    self.assertEqual(self.x.schemeless_uri, self.a)
+    self.assertEqual(self.x.relative_uri, self.a[self.a.index("/"):])
+    self.assertEqual(self.x.uri_with_fragment, "http://" + self.a)
+    self.assertEqual(self.y.uri_with_fragment, self.b)
+
+  def test_eq(self):
+    self.assertEqual(self.x, self.x.uri)
+    self.assertEqual(self.x, self.x.uri_with_fragment)
+    self.assertEqual(self.y, self.y.uri_with_fragment)
                                                                 # }}}1
 
 class Test_Request(unittest.TestCase):                          # {{{1
