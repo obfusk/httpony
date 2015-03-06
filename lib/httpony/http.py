@@ -97,10 +97,7 @@ class URI(U.Immutable):                                         # {{{1
 
   @property
   def schemeless_uri(self):
-    s = self.host or ""
-    if self.port and self.port != HTTP_DEFAULT_PORT:
-      s += ":" + str(self.port)
-    s += self.relative_uri
+    s = self.host_and_port + self.relative_uri
     if self.password:
       s = ":" + self.password + "@" + s
       if self.username: s = self.username + s
@@ -112,6 +109,13 @@ class URI(U.Immutable):                                         # {{{1
   def relative_uri(self):
     s = self.path
     if self.query: s += "?" + self.query
+    return s
+
+  @property
+  def host_and_port(self):
+    s = self.host or ""
+    if self.port and self.port != HTTP_DEFAULT_PORT:
+      s += ":" + str(self.port)
     return s
 
   def __eq__(self, rhs):
@@ -145,6 +149,7 @@ class Message(U.Immutable):                                     # {{{1
     yield "".join(S.unstripped_lines([start_line] + headers + [""]))
     for chunk in self.body: yield chunk
 
+  @property
   def force_body(self):
     """force body into a 1-tuple and return its only element"""
     if not (isinstance(self.body, tuple) and len(self.body) == 1):
@@ -279,7 +284,7 @@ def responses(si, bufsize = S.DEFAULT_BUFSIZE):                 # {{{1
 def force_bodies(xs):
   """force bodies in message stream"""
   for msg in xs:
-    msg.force_body(); yield msg
+    msg.force_body; yield msg
 
 def request(x):
   """make a Request (if x is not already one)"""

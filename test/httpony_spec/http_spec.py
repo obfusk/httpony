@@ -45,10 +45,13 @@ class Test_URI(unittest.TestCase):                              # {{{1
     self.assertEqual(self.y.fragment      , "bar")
 
   def test_props(self):
+    self.assertEqual(self.x.host_and_port, "example.com:666")
     self.assertEqual(self.x.uri, "http://" + self.a)
     self.assertEqual(self.x.schemeless_uri, self.a)
     self.assertEqual(self.x.relative_uri, self.a[self.a.index("/"):])
     self.assertEqual(self.x.uri_with_fragment, "http://" + self.a)
+
+    self.assertEqual(self.y.host_and_port, "example.com")
     self.assertEqual(self.y.uri_with_fragment, self.b)
 
   def test_eq(self):
@@ -121,7 +124,7 @@ class Test_Request(unittest.TestCase):                          # {{{1
   def test_force_body(self):
     x = H.Request(body = (x for x in "foo bar baz".split()))
     self.assertIsInstance(x.body, type(x for x in []))
-    self.assertEqual(x.force_body(), "foobarbaz")
+    self.assertEqual(x.force_body, "foobarbaz")
     self.assertIsInstance(x.body, tuple)
     self.assertEqual(x.body, ("foobarbaz",))
 

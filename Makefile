@@ -17,7 +17,7 @@ test_v:
 	python -m unittest discover -s test -p '*_spec.py' -v
 
 repl:
-	python -i -c 'from $(LIB) import *'
+	rlwrap --always-readline python -i -c 'from $(LIB) import *'
 
 run:
 	python -m $(LIB).$(RUN)

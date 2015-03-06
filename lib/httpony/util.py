@@ -17,7 +17,7 @@ class idict(collections.MutableMapping):                        # {{{1
 
   """case-insensitive dict"""
 
-  def __init__(self, data=None, **kw):
+  def __init__(self, data = None, **kw):
     self._data = {}
     if data is not None: self.update(data)
     self.update(**kw)

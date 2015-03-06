@@ -121,10 +121,10 @@ def handler(cls):                                               # {{{1
                                                                 # }}}1
 
 # TODO: before, after, ...
-for _x in ["ANY"] + H.HTTP_METHODS:
-  setattr(HandlerBase, _x.lower(), _make_handler_classmethod(_x))
-  locals()[_x.lower()] = _make_method_wrapper(_x)
-del _x
+for _m in ["ANY"] + H.HTTP_METHODS:
+  setattr(HandlerBase, _m.lower(), _make_handler_classmethod(_m))
+  locals()[_m.lower()] = _make_method_wrapper(_m)
+del _m
 
 # ...
 
