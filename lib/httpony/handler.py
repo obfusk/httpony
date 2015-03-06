@@ -10,14 +10,13 @@
 # --                                                            ; }}}1
 
 from . import http as H
+from . import util as U
 import re
 
 RE_TYPE = type(re.compile(""))
 
 # TODO
 class _HandlerBase(object):                                     # {{{1
-
-  """request handler base class"""
 
   def __init__(self):
     pass
@@ -27,9 +26,9 @@ class _HandlerBase(object):                                     # {{{1
     """handle request"""
     self.request  = request
     self.params   = {}
-    handler = self._match(request)
-    if handler is None: return None                             # TODO
-    self.response = handler(request)
+    handler       = self._match(request)
+    if handler is None: return None
+    self.response = H.Response(handler(self, *self.route_args))
     return self.response
 
   # TODO
@@ -37,13 +36,12 @@ class _HandlerBase(object):                                     # {{{1
     for h in self._handlers:
       methods, uri_pattern, handler = h
       if request.method in methods:
-        m = uri_pattern.search(self, request.uri)
+        m = uri_pattern.search(request.uri.relative_uri)
         if m is not None:
           self.route_args   = m.groups()
           self.route_params = m.groupdict()
           self.params.update(self.route_params)
-          handler(self, request, *self.route_args,
-                  **self.route_params)
+          return handler
     return None
 
   # TODO
@@ -67,12 +65,8 @@ class _HandlerBase(object):                                     # {{{1
         p = re.compile(
           "\A" + "/".join(map(f, uri_pattern.split("/"))) + "\Z"
         )
-      def handle(self, request, *a, **k):
-        print "HANDLING", request                               # TODO
-        return meth(self, request, *a, **k)
-      # fed
       if not hasattr(cls, "_handlers"): cls._handlers = []
-      cls._handlers += [(methods, p, handle)]
+      cls._handlers += [(methods, p, meth)]
       return meth
     # fed
     return decorate
@@ -88,8 +82,32 @@ class _HandlerBase(object):                                     # {{{1
   # ...
                                                                 # }}}1
 
-def Handler(name = ""):
-  return type(name + "Handler", (_HandlerBase,), {})
+class _MethodWrapper(U.Immutable):
+  __slots__ = "method call args".split()
+
+def Handler(name = "Handler"):
+  """create Handler"""
+  return type(name, (_HandlerBase,), {})
+
+def handler(cls):
+  """create Handler from class (with this decorator)"""
+  d = cls.__dict__.copy(); ws = {}
+  for k in d.keys():
+    if isinstance(d[k], _MethodWrapper):
+      ws[k] = d[k]; del d[k]
+  c = type(cls.__name__, (_HandlerBase,), d)
+  for (k, w) in ws.iteritems():
+    setattr(c, k, getattr(c, w.call)(*w.args)(w.method))
+  return c
+
+def get(uri_pattern):
+  """handle GET request"""
+  def decorate(meth):
+    return _MethodWrapper(method = meth, call = "get",
+                          args = (uri_pattern,))
+  return decorate
+
+# TODO: before, after, any, post, ...
 
 # ...
 

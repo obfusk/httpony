@@ -9,7 +9,57 @@
 #
 # --                                                            ; }}}1
 
+import httpony.handler as H
+import httpony.http as http
 import unittest
+
+X = H.Handler("X")
+
+@X.get("/foo/:id")
+def get_foo(self, id):
+  return "got foo w/ id {}".format(id)
+
+@X.get("/nothing/to/see")
+def oops(self):
+  return 404
+
+@H.handler
+class Y:                                                        # {{{1
+
+  @H.get("/bar/:id")
+  def get_bar(self, id):
+    return "got bar w/ id {}".format(id)
+
+  @H.get("/nothing/to/see")
+  def oops(self):
+    return 404
+                                                                # }}}1
+
+class Test_Handler(unittest.TestCase):                          # {{{1
+
+  def test_get_foo(self):
+    req   = http.Request(uri = "/foo/42")
+    resp  = X()(req)
+    self.assertEqual(resp, http.Response(body = "got foo w/ id 42"))
+
+  def test_oops(self):
+    req   = http.Request(uri = "/nothing/to/see")
+    resp  = X()(req)
+    self.assertEqual(resp, http.Response(status = 404))
+                                                                # }}}1
+
+class Test_handler(unittest.TestCase):                          # {{{1
+
+  def test_get_foo(self):
+    req   = http.Request(uri = "/bar/37")
+    resp  = Y()(req)
+    self.assertEqual(resp, http.Response(body = "got bar w/ id 37"))
+
+  def test_oops(self):
+    req   = http.Request(uri = "/nothing/to/see")
+    resp  = Y()(req)
+    self.assertEqual(resp, http.Response(status = 404))
+                                                                # }}}1
 
 # ...
 
