@@ -179,8 +179,13 @@ class Test_Response(unittest.TestCase):                         # {{{1
 
   def test_init_data_no_mapping_etc(self):
     with self.assertRaisesRegexp(TypeError, "must be a mapping, " +
-                                "3-tuple, int, str, or iterable"):
+                                "tuple, int, str, or iterable"):
       H.Response(3.14)
+
+  def test_init_data_wrong_tuple(self):
+    with self.assertRaisesRegexp(TypeError, "tuple data argument "
+                                 "must have either 2 or 3 elements"):
+      H.Response((1,2,3,4))
 
   def test_init_data_tuple(self):
     x = H.Response((404, dict(Foo = "bar"), "<body>"))

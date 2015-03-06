@@ -196,8 +196,15 @@ class Response(Message):                                        # {{{1
       elif isinstance(data, collections.Mapping):
         kw = data
       elif isinstance(data, tuple):
-        status, headers, body = data
-        kw = dict(status = status, headers = headers, body = body)
+        if len(data) == 2:
+          status, body = data
+          kw = dict(status = status, body = body)
+        elif len(data) == 3:
+          status, headers, body = data
+          kw = dict(status = status, headers = headers, body = body)
+        else:
+          raise TypeError("tuple data argument must have "
+                          "either 2 or 3 elements")
       elif isinstance(data, int):
         kw = dict(status = data)
       elif isinstance(data, str) or \
@@ -205,7 +212,7 @@ class Response(Message):                                        # {{{1
         kw = dict(body = data)
       else:
         raise TypeError("data argument must be a " +
-                        "mapping, 3-tuple, int, str, or iterable")
+                        "mapping, tuple, int, str, or iterable")
     super(Response, self).__init__(**kw)
     if "reason" not in kw:
       self._Immutable___set("reason", HTTP_STATUS_CODES[self.status])
