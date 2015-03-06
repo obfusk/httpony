@@ -120,8 +120,8 @@ def handler(cls):                                               # {{{1
   return c
                                                                 # }}}1
 
-# TODO: before, after, post, ...
-for _x in "ANY GET".split():
+# TODO: before, after, ...
+for _x in ["ANY"] + H.HTTP_METHODS:
   setattr(HandlerBase, _x.lower(), _make_handler_classmethod(_x))
   locals()[_x.lower()] = _make_method_wrapper(_x)
 del _x

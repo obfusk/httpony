@@ -56,6 +56,12 @@ class Test_Handler(unittest.TestCase):                          # {{{1
     resp  = X()(req)
     self.assertEqual(resp, http.Response(status = 404,
                                          body = "something/else"))
+
+  def test_the_rest_post(self):
+    req   = http.Request(uri = "/some/where", method = "POST")
+    resp  = X()(req)
+    self.assertEqual(resp, http.Response(status = 404,
+                                         body = "some/where"))
                                                                 # }}}1
 
 class Test_handler(unittest.TestCase):                          # {{{1
