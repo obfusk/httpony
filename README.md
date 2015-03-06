@@ -2,7 +2,7 @@
 
     File        : README.md
     Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-    Date        : 2015-03-04
+    Date        : 2015-03-05
 
     Copyright   : Copyright (C) 2015  Felix C. Stegerman
     Version     : v0.0.1
@@ -30,16 +30,21 @@ $ make test
 
 ## TODO
 
-  * httpony.client
   * httpony.handler
-  * httpony.http
+  * httpony.client
   * httpony.server
+  * docs
+  * more specs (?)
+  * optimisations (?)
+  * httpony.machine (?)
+  * httpony.middleware (?)
+  * ...
+
+### Mostly done
+
+  * httpony.http
   * httpony.stream
   * httpony.util
-  * specs
-  * docs
-  * optimisations?
-  * ...
 
 ## License
 
