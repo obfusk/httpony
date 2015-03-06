@@ -21,7 +21,11 @@ def get_foo(self, id):
 
 @X.get("/nothing/to/see")
 def oops(self):
-  return 404
+  return (404, {}, "oops")
+
+@X.get("/*")
+def the_rest(self, splat):
+  return (404, {}, splat)
 
 @H.handler
 class Y:                                                        # {{{1
@@ -45,7 +49,13 @@ class Test_Handler(unittest.TestCase):                          # {{{1
   def test_oops(self):
     req   = http.Request(uri = "/nothing/to/see")
     resp  = X()(req)
-    self.assertEqual(resp, http.Response(status = 404))
+    self.assertEqual(resp, http.Response(status = 404, body = "oops"))
+
+  def test_the_rest(self):
+    req   = http.Request(uri = "/something/else")
+    resp  = X()(req)
+    self.assertEqual(resp, http.Response(status = 404,
+                                         body = "something/else"))
                                                                 # }}}1
 
 class Test_handler(unittest.TestCase):                          # {{{1
