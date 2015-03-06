@@ -89,7 +89,7 @@ def Handler(name = "Handler"):
   """create Handler"""
   return type(name, (_HandlerBase,), {})
 
-def handler(cls):
+def handler(cls):                                               # {{{1
   """create Handler from class (with this decorator)"""
   d = cls.__dict__.copy(); ws = {}
   for k in d.keys():
@@ -99,6 +99,7 @@ def handler(cls):
   for (k, w) in ws.iteritems():
     setattr(c, k, getattr(c, w.call)(*w.args)(w.method))
   return c
+                                                                # }}}1
 
 def get(uri_pattern):
   """handle GET request"""
