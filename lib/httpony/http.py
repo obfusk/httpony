@@ -2,12 +2,14 @@
 #
 # File        : httpony/http.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-05
+# Date        : 2015-03-06
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
 #
 # --                                                            ; }}}1
+
+"""HTTP URIs, requests, responses, streams"""
 
 from . import stream as S
 from . import util as U
@@ -271,6 +273,16 @@ def force_bodies(xs):
   """force bodies in message stream"""
   for msg in xs:
     msg.force_body(); yield msg
+
+def request(x):
+  """make a Request (if x is not already one)"""
+  if isinstance(x, Request): return x
+  return Request(x)
+
+def response(x):
+  """make a Response (if x is not already one)"""
+  if isinstance(x, Response): return x
+  return Response(x)
 
 # ...
 

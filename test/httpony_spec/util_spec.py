@@ -2,7 +2,7 @@
 #
 # File        : util_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-05
+# Date        : 2015-03-06
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -119,10 +119,24 @@ class Test_Immutable(unittest.TestCase):                        # {{{1
                                  "has no attribute 'spam'"):
       x.spam = 99
 
+  def test_copy(self):
+    x = X(foo = 42, bar = 37)
+    y = x.copy()
+    z = x.copy(baz = 99)
+    self.assertEqual(x, y)
+    self.assertNotEqual(x, z)
+    self.assertEqual(x.baz, None)
+    self.assertEqual(z.baz, 99)
+
   def test_iteritems(self):
     x = X(foo = 42, bar = 37)
     self.assertEqual(dict(x.iteritems()),
                      dict(foo = 42, bar = 37, baz = None))
+
+  def test_items(self):
+    x = X(foo = 42, bar = 37)
+    self.assertEqual(x.items(),
+                     [("foo", 42), ("bar", 37), ("baz", None)])
 
   def test_eq(self):
     x = X(foo = "foo")

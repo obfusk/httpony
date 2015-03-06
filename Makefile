@@ -1,4 +1,4 @@
-.PHONY: test test_v run repl serve_docs clean sinatra curl
+.PHONY: test test_v repl run serve_docs shell clean sinatra curl
 
 SHELL       = bash
 
@@ -16,14 +16,17 @@ test:
 test_v:
 	python -m unittest discover -s test -p '*_spec.py' -v
 
-run:
-	python -m $(LIB).$(RUN)
-
 repl:
 	python -i -c 'from $(LIB) import *'
 
+run:
+	python -m $(LIB).$(RUN)
+
 serve_docs:
 	pydoc -p $(PYDOC_PORT)
+
+shell:
+	bash
 
 clean:
 	shopt -s nullglob globstar; rm -f **/*.pyc

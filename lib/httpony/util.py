@@ -2,12 +2,14 @@
 #
 # File        : httpony/util.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-05
+# Date        : 2015-03-06
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
 #
 # --                                                            ; }}}1
+
+"""utilities like case-insensitive dict and Immutable base class"""
 
 import collections
 
@@ -45,7 +47,7 @@ class idict(collections.MutableMapping):                        # {{{1
     return ((k, v[1]) for k, v in self._data.iteritems())
 
   def copy(self):
-    return idict(self._data.values())
+    return type(self)(self._data.values())
 
   # ... and we also need to override these
 
@@ -109,8 +111,14 @@ class Immutable(object):                                        # {{{1
         )
       )
 
+  def copy(self, **kw):
+    return type(self)(dict(self.iteritems()), **kw)
+
   def iteritems(self):
     return ((k, getattr(self, k)) for k in self.__slots__)
+
+  def items(self):
+    return list(self.iteritems())
 
   def __eq__(self, rhs):
     if not isinstance(rhs, type(self)):

@@ -2,7 +2,7 @@
 #
 # File        : http_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-05
+# Date        : 2015-03-06
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -263,6 +263,24 @@ class Test_http(unittest.TestCase):                             # {{{1
         )
       ]
     )
+
+  def test_request(self):
+    x = H.Request(uri = "/foo")
+    y = H.request(x)
+    z = H.request(dict(uri = "/foo"))
+    self.assertEqual(x, y)
+    self.assertEqual(x, z)
+    self.assertIs(x, y)
+    self.assertIsNot(x, z)
+
+  def test_response(self):
+    x = H.Response("foo")
+    y = H.response(x)
+    z = H.response("foo")
+    self.assertEqual(x, y)
+    self.assertEqual(x, z)
+    self.assertIs(x, y)
+    self.assertIsNot(x, z)
                                                                 # }}}1
 
 # ...

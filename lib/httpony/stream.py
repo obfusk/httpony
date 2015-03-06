@@ -2,12 +2,14 @@
 #
 # File        : httpony/stream.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-04
+# Date        : 2015-03-06
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
 #
 # --                                                            ; }}}1
+
+"""stream abstraction"""
 
 import StringIO
 

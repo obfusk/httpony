@@ -2,7 +2,7 @@
 #
 # File        : handler_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-05
+# Date        : 2015-03-06
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -23,7 +23,7 @@ def get_foo(self, id):
 def oops(self):
   return (404, {}, "oops")
 
-@X.get("/*")
+@X.any("/*")
 def the_rest(self, splat):
   return (404, {}, splat)
 

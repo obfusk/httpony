@@ -2,12 +2,14 @@
 #
 # File        : httpony/server.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-01
+# Date        : 2015-03-06
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
 #
 # --                                                            ; }}}1
+
+"""HTTP server"""
 
 from . import http as H
 from . import stream as S
