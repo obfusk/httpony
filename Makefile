@@ -1,4 +1,4 @@
-.PHONY: test run repl clean sinatra curl
+.PHONY: test test_v run repl serve_docs clean sinatra curl
 
 SHELL       = bash
 
@@ -6,6 +6,7 @@ LIB         = httpony
 RUN         = server
 
 CURL_PATH  ?= /
+PYDOC_PORT ?= 1234
 
 export PYTHONPATH = $(PWD)/lib:$(PWD)/test
 
@@ -20,6 +21,9 @@ run:
 
 repl:
 	python -i -c 'from $(LIB) import *'
+
+serve_docs:
+	pydoc -p $(PYDOC_PORT)
 
 clean:
 	shopt -s nullglob globstar; rm -f **/*.pyc
