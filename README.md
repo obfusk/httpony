@@ -2,7 +2,7 @@
 
     File        : README.md
     Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-    Date        : 2015-03-05
+    Date        : 2015-03-06
 
     Copyright   : Copyright (C) 2015  Felix C. Stegerman
     Version     : v0.0.1
@@ -26,6 +26,7 @@
 
 ```bash
 $ make test
+$ make coverage
 ```
 
 ## TODO

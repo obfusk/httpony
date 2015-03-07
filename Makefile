@@ -1,4 +1,5 @@
-.PHONY: test test_v repl run serve_docs shell clean sinatra curl
+.PHONY: test test_v coverage repl run
+.PHONY: serve_docs shell clean sinatra curl
 
 SHELL       = bash
 
@@ -11,10 +12,14 @@ PYDOC_PORT ?= 1234
 export PYTHONPATH = $(PWD)/lib:$(PWD)/test
 
 test:
-	python -m unittest discover -s test -p '*_spec.py'
+	python test.py
 
 test_v:
-	python -m unittest discover -s test -p '*_spec.py' -v
+	python test.py 2
+
+coverage:
+	python-coverage run test.py
+	python-coverage html
 
 repl:
 	rlwrap --always-readline python -i -c 'from $(LIB) import *'
@@ -30,6 +35,7 @@ shell:
 
 clean:
 	shopt -s nullglob globstar; rm -f **/*.pyc
+	rm -fr .coverage htmlcov/
 
 sinatra:
 	ruby -rsinatra -e 'get("/") { "Hi!\n" }; \
