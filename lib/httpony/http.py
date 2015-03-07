@@ -59,30 +59,38 @@ HTTP_STATUS_CODES = {                                           # {{{1
   505 : "HTTP Version Not Supported"
 }                                                               # }}}1
 
-HTTP_DEFAULT_PORT = 80
-HTTP_SCHEME       = "http"
+HTTP_DEFAULT_PORT   = 80
+HTTPS_DEFAULT_PORT  = 443
 
-HTTP_METHODS      = "OPTIONS GET HEAD POST PUT DELETE".split()
+HTTP_SCHEME         = "http"
+HTTPS_SCHEME        = "https"
+
+HTTP_METHODS        = "OPTIONS GET HEAD POST PUT DELETE".split()
 
 class URI(U.Immutable):                                         # {{{1
 
-  """HTTP URI"""
+  """HTTP(S) URI"""
 
   __slots__ = "scheme username password host port path \
                query query_params fragment".split()
 
   def __init__(self, uri):
-    if not uri.startswith(HTTP_SCHEME + "://"):
+    if not (uri.startswith(HTTP_SCHEME  + "://") or \
+            uri.startswith(HTTPS_SCHEME + "://")):
       uri = HTTP_SCHEME + "://" + uri
     u = urlparse.urlparse(uri)
     q = urlparse.parse_qs(u.query, True, True) if u.query else {}
     for k in q:
       if len(q[k]) == 1: q[k] = q[k][0]
+    port = u.port
+    if not port:
+      port = HTTPS_DEFAULT_PORT if u.scheme == HTTPS_SCHEME \
+                                else HTTP_DEFAULT_PORT
     super(URI, self).__init__(
       scheme = u.scheme, username = u.username,
       password = u.password, host = u.hostname or "",
-      port = u.port or HTTP_DEFAULT_PORT, path = u.path or "/",
-      query = u.query, query_params = q, fragment = u.fragment
+      port = port, path = u.path or "/", query = u.query,
+      query_params = q, fragment = u.fragment
     )
 
   @property
@@ -114,9 +122,18 @@ class URI(U.Immutable):                                         # {{{1
   @property
   def host_and_port(self):
     s = self.host or ""
-    if self.port and self.port != HTTP_DEFAULT_PORT:
-      s += ":" + str(self.port)
+    if self.non_default_port: s += ":" + str(self.port)
     return s
+
+  @property
+  def non_default_port(self):
+    if self.port and ((self.scheme == HTTP_SCHEME and
+                       self.port != HTTP_DEFAULT_PORT) or
+                      (self.scheme == HTTPS_SCHEME and
+                       self.port != HTTPS_DEFAULT_PORT)):
+      return self.port
+    else:
+      return None
 
   def __eq__(self, rhs):
     if isinstance(rhs, str):

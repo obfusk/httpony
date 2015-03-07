@@ -20,9 +20,6 @@ class IStream(object):                                          # {{{1
 
   """input stream"""
 
-  def __init__(self):
-    pass
-
   def read(self, size = None):
     """read up to size bytes from stream"""
     raise NotImplementedError
@@ -55,7 +52,7 @@ class IStream(object):                                          # {{{1
     return (t, d)
 
   def close(self):
-    """ close stream"""
+    """close stream"""
     raise NotImplementedError
                                                                 # }}}1
 
@@ -63,10 +60,9 @@ class IStreamTake(IStream):                                     # {{{1
 
   """first part (n bytes) of split stream"""
 
-  def __init__(self, parent, n, bufsize = DEFAULT_BUFSIZE, *a, **k):
+  def __init__(self, parent, n, bufsize = DEFAULT_BUFSIZE):
     self.parent = parent; self.n = n; self.bufsize = bufsize
     self.buf = ""
-    super(IStreamTake, self).__init__(*a, **k)
 
   def done(self):
     """has this part been read entirely?"""
@@ -106,9 +102,8 @@ class IStreamDrop(IStream):                                     # {{{1
 
   """rest of split stream"""
 
-  def __init__(self, parent, take, *a, **k):
+  def __init__(self, parent, take):
     self.parent = parent; self.take = take
-    super(IStreamDrop, self).__init__(*a, **k)
 
   def _force_take(self):
     if not self.take.done(): self.take.peek(-1)
@@ -126,15 +121,16 @@ class OStream(object):                                          # {{{1
 
   """output stream"""
 
-  def __init__(self):
-    pass
-
   def write(self, data):
     """write data to stream"""
     raise NotImplementedError
 
   def close(self):
-    """ close stream"""
+    """close stream"""
+    raise NotImplementedError
+
+  def flush(self):
+    """flush stream"""
     raise NotImplementedError
                                                                 # }}}1
 
@@ -142,9 +138,8 @@ class IFileStream(IStream):                                     # {{{1
 
   """file input stream"""
 
-  def __init__(self, file, *a, **k):
+  def __init__(self, file):
     self.file = file
-    super(IFileStream, self).__init__(*a, **k)
 
   def read(self, size = None):
     return self.file.read(size)
@@ -163,33 +158,33 @@ class OFileStream(OStream):                                     # {{{1
 
   """file output stream"""
 
-  def __init__(self, file, *a, **k):
+  def __init__(self, file):
     self.file = file
-    super(OFileStream, self).__init__(*a, **k)
 
   def write(self, data):
     return self.file.write(data)
 
   def close(self):
     return self.file.close()
+
+  def flush(self):
+    return self.file.flush()
                                                                 # }}}1
 
 class IStringStream(IFileStream):                               # {{{1
 
   """string input stream"""
 
-  def __init__(self, data, *a, **k):
-    file = StringIO.StringIO(data)
-    super(IStringStream, self).__init__(file, *a, **k)
+  def __init__(self, data):
+    super(IStringStream, self).__init__(StringIO.StringIO(data))
                                                                 # }}}1
 
 class OStringStream(OFileStream):                               # {{{1
 
   """string output stream"""
 
-  def __init__(self, *a, **k):
-    file = StringIO.StringIO("")
-    super(OStringStream, self).__init__(file, *a, **k)
+  def __init__(self):
+    super(OStringStream, self).__init__(StringIO.StringIO())
 
   def getvalue(self):
     return self.file.getvalue()
@@ -203,7 +198,7 @@ class ISocketStream(IFileStream):                               # {{{1
     self.sock     = sock
     self.bufsize  = DEFAULT_BUFSIZE
     file          = sock.makefile("rb", bufsize)
-    super(ISocketStream, self).__init__(file, *a, **k)
+    super(ISocketStream, self).__init__(file)
 
   def close(self):
     self.sock.shutdown(); self.sock.close()
@@ -218,7 +213,7 @@ class OSocketStream(OFileStream):                               # {{{1
     self.sock     = sock
     self.bufsize  = DEFAULT_BUFSIZE
     file          = sock.makefile("wb", bufsize)
-    super(OSocketStream, self).__init__(file, *a, **k)
+    super(OSocketStream, self).__init__(file)
 
   def close(self):
     self.sock.shutdown(); self.sock.close()
@@ -229,25 +224,28 @@ class IRequestHandlerStream(IFileStream):                       # {{{1
 
   """SocketServer request handler input stream"""
 
-  def __init__(self, handler, *a, **k):
-    self.handler = handler; file = handler.rfile
-    super(IRequestHandlerStream, self).__init__(file, *a, **k)
+  def __init__(self, handler):
+    self.handler = handler
+    super(IRequestHandlerStream, self).__init__(handler.rfile)
                                                                 # }}}1
 
 class ORequestHandlerStream(OFileStream):                       # {{{1
 
   """SocketServer request handler output stream"""
 
-  def __init__(self, handler, *a, **k):
-    self.handler = handler; file = handler.wfile
-    super(ORequestHandlerStream, self).__init__(file, *a, **k)
+  def __init__(self, handler):
+    self.handler = handler
+    super(ORequestHandlerStream, self).__init__(handler.wfile)
                                                                 # }}}1
 
 def interact(istream, ostream, f):
   """map input stream to output stream using a generator function that
   returns chunks"""
   for chunk in f(istream):
-    ostream.write(chunk)
+    if chunk is None:
+      ostream.flush()
+    else:
+      ostream.write(chunk)
 
 def stripped_lines(lines):
   """wraps line iterator, strips trailing '\\r' and '\\n'"""

@@ -19,8 +19,10 @@ class Test_URI(unittest.TestCase):                              # {{{1
   def setUp(self):
     self.a = "example.com:666/foo?x=42"
     self.b = "http://foo@example.com/foo?x=42&y=37&x=99#bar"
+    self.c = "https://example.org/baz"
     self.x = H.URI(self.a)
     self.y = H.URI(self.b)
+    self.z = H.URI(self.c)
 
   def test_attrs(self):
     self.assertEqual(self.x.scheme        , "http")
@@ -44,6 +46,16 @@ class Test_URI(unittest.TestCase):                              # {{{1
                      dict(x = ["42", "99"], y = "37"))
     self.assertEqual(self.y.fragment      , "bar")
 
+    self.assertEqual(self.z.scheme        , "https")
+    self.assertEqual(self.z.username      , None)
+    self.assertEqual(self.z.password      , None)
+    self.assertEqual(self.z.host          , "example.org")
+    self.assertEqual(self.z.port          , 443)
+    self.assertEqual(self.z.path          , "/baz")
+    self.assertEqual(self.z.query         , "")
+    self.assertEqual(self.z.query_params  , dict())
+    self.assertEqual(self.z.fragment      , "")
+
   def test_props(self):
     self.assertEqual(self.x.host_and_port, "example.com:666")
     self.assertEqual(self.x.uri, "http://" + self.a)
@@ -53,6 +65,11 @@ class Test_URI(unittest.TestCase):                              # {{{1
 
     self.assertEqual(self.y.host_and_port, "example.com")
     self.assertEqual(self.y.uri_with_fragment, self.b)
+
+    self.assertEqual(self.z.host_and_port, "example.org")
+    self.assertEqual(self.z.uri, self.c)
+    self.assertEqual(self.z.schemeless_uri, self.c[8:])
+    self.assertEqual(self.z.relative_uri, "/baz")
 
   def test_eq(self):
     self.assertEqual(self.x, self.x.uri)
