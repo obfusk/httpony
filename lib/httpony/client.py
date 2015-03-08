@@ -95,7 +95,8 @@ class Client(object):                                           # {{{1
               body_only = False):
     """request w/ the specified method"""
     if cls not in _CLIENTS: _CLIENTS[cls] = Client()
-    _CLIENTS[cls].request(method, uri, headers, body, body_only)
+    return _CLIENTS[cls].request(method, uri, headers, body,
+                                 body_only)
                                                                 # }}}1
 
 def _make_request_methods(http_method):
