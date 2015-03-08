@@ -2,7 +2,7 @@
 #
 # File        : httpony/client.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-06
+# Date        : 2015-03-07
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -57,12 +57,12 @@ class Client(object):                                           # {{{1
   # TODO
   def _socket_request(self, req):
     sock  = self._socket(req.uri)
-    reqs  = H.responses(S.ISocketStream(sock))
+    resps = H.responses(S.ISocketStream(sock))
     so    = S.OSocketStream(sock)
     resp  = None
     try:
-      for chunk in req.unparse(): so.write(chunk)
-      so.flush(); resp = next(reqs, None);
+      for chunk in req.unparse_chunked(): so.write(chunk)
+      so.flush(); resp = next(resps, None);
     finally:
       sock.close()
     return resp
@@ -79,7 +79,7 @@ class Client(object):                                           # {{{1
     if not req.uri.host: raise ValueError("no host specified")
     req.headers.setdefault("Host", req.uri.host)
     if self.handler:
-      resp = self.handler(req)
+      resp = self.handler()(req)
     elif self.persistent:
       # TODO: we need to check whether host_and_port is the same
       raise RuntimeError("persistent connections not yet implemented")
@@ -111,5 +111,9 @@ for _m in H.HTTP_METHODS:
 del _m, _f, _g
 
 # ...
+
+# TODO
+if __name__ == "__main__":
+  pass
 
 # vim: set tw=70 sw=2 sts=2 et fdm=marker :

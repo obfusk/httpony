@@ -270,7 +270,7 @@ def generic_messages(si):                                       # {{{1
 
 def split_body(msg, bufsize):
   """split stream into body and rest"""
-  cl = int(msg["headers"].get("content-length", 0))
+  cl = int(msg["headers"].get("Content-Length", 0))
   return msg["body"].split(cl, bufsize)
 
 def requests(si, bufsize = S.DEFAULT_BUFSIZE):                  # {{{1

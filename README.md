@@ -2,7 +2,7 @@
 
     File        : README.md
     Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-    Date        : 2015-03-06
+    Date        : 2015-03-07
 
     Copyright   : Copyright (C) 2015  Felix C. Stegerman
     Version     : v0.0.1
@@ -31,9 +31,9 @@ $ make coverage
 
 ## TODO
 
-  * httpony.handler
-  * httpony.client
   * httpony.server
+  * chunked, persistent, redirect, ...
+  * etag, context, static, env, ...
   * docs
   * more specs (?)
   * optimisations (?)
@@ -43,6 +43,8 @@ $ make coverage
 
 ### Mostly done
 
+  * httpony.client
+  * httpony.handler
   * httpony.http
   * httpony.stream
   * httpony.util

@@ -2,7 +2,7 @@
 #
 # File        : client_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-06
+# Date        : 2015-03-07
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -27,26 +27,26 @@ def the_rest(self, splat):
 class Test_Client(unittest.TestCase):                           # {{{1
 
   def test_get_with_handler(self):
-    c = C.Client(handler = X())
+    c = C.Client(handler = X)
     x = c.get("example.com/foo")
     self.assertEqual(x.force_body,
                      repr(["GET", "http://example.com/foo"]))
 
   def test_get_with_handler_headers(self):
-    c = C.Client(handler = X())
+    c = C.Client(handler = X)
     x = c.get("example.com/headers")
     self.assertEqual(x.force_body,
                      repr([("Accept", "*/*"), ("Host", "example.com"),
                            ("User-Agent", C.DEFAULT_USER_AGENT)]))
 
   def test_post_with_handler(self):
-    c = C.Client(handler = X())
+    c = C.Client(handler = X)
     x = c.post("example.com/foo")
     self.assertEqual(x.force_body,
                      repr(["POST", "http://example.com/foo"]))
 
   def test_get_with_handler_and_base_uri(self):
-    c = C.Client("example.com", handler = X())
+    c = C.Client("example.com", handler = X)
     x = c.get("/foo")
     y = c.get("/bar")
     z = c.get("example.org/baz")
