@@ -2,7 +2,7 @@
 #
 # File        : httpony/http.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-06
+# Date        : 2015-03-09
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -66,6 +66,9 @@ HTTP_SCHEME         = "http"
 HTTPS_SCHEME        = "https"
 
 HTTP_METHODS        = "OPTIONS GET HEAD POST PUT DELETE".split()
+
+class Error(RuntimeError):
+  pass
 
 class URI(U.Immutable):                                         # {{{1
 
@@ -268,10 +271,23 @@ def generic_messages(si):                                       # {{{1
     )
                                                                 # }}}1
 
+# TODO: extensions, trailer
+def http_chunked_chunks(si):
+  while True:
+    n = int(si.readline(), 16)
+    if n == 0: break
+    yield si.split(n)[0].read()
+    si.readline()
+  si.readline()
+
 def split_body(msg, bufsize):
   """split stream into body and rest"""
-  cl = int(msg["headers"].get("Content-Length", 0))
-  return msg["body"].split(cl, bufsize)
+  te = msg["headers"].get("Transfer-Encoding", "")
+  cl = msg["headers"].get("Content-Length", 0)
+  if te.lower() == "chunked":
+    return msg["body"].splitchunked(http_chunked_chunks, bufsize)
+  else:
+    return msg["body"].split(int(cl), bufsize)
 
 def requests(si, bufsize = S.DEFAULT_BUFSIZE):                  # {{{1
   """iterate over HTTP requests"""

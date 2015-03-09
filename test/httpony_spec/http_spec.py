@@ -2,7 +2,7 @@
 #
 # File        : http_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-06
+# Date        : 2015-03-09
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -257,34 +257,40 @@ class Test_Response(unittest.TestCase):                         # {{{1
 class Test_http(unittest.TestCase):                             # {{{1
 
   def test_requests_w_forced_bodies(self):
-    r1  = "GET /foo HTTP/1.1\r\nContent-length: 7\r\n\r\n<body1>"
-    r2  = "GET /bar HTTP/1.1\r\nContent-length: 7\r\n\r\n<body2>"
+    r1  = "GET /foo HTTP/1.1\r\nContent-Length: 7\r\n\r\n<body1>"
+    r2  = "GET /bar HTTP/1.1\r\nContent-Length: 7\r\n\r\n<body2>"
     self.assertEqual(
       list(H.force_bodies(H.requests(S.IStringStream(r1 + r2)))),
       [
         H.Request(
           method = "GET", uri = "/foo",
-          headers = { "content-length": "7" }, body = "<body1>"
+          headers = { "Content-Length": "7" }, body = "<body1>"
         ),
         H.Request(
           method = "GET", uri = "/bar",
-          headers = { "content-length": "7" }, body = "<body2>"
+          headers = { "Content-Length": "7" }, body = "<body2>"
         )
       ]
     )
 
   def test_responses_w_forced_bodies(self):
-    r1  = "HTTP/1.1 200 OK\r\nContent-length: 6\r\n\r\n<body>"
+    r1  = "HTTP/1.1 200 OK\r\nContent-Length: 6\r\n\r\n<body>"
     r2  = "HTTP/1.1 404 Not Found\r\n\r\n"
+    r3  = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n" \
+          "4\r\nfoo \r\n7\r\nbar baz\r\n0\r\n\r\n"
     self.assertEqual(
-      list(H.force_bodies(H.responses(S.IStringStream(r1 + r2)))),
+      list(H.force_bodies(H.responses(S.IStringStream(r1+r2+r3)))),
       [
         H.Response(
           status = 200, reason = "OK",
-          headers = { "content-length": "6" }, body = "<body>"
+          headers = { "Content-Length": "6" }, body = "<body>"
         ),
         H.Response(
           status = 404, reason = "Not Found", headers = {}, body = ""
+        ),
+        H.Response(
+          headers = { "Transfer-Encoding": "chunked" },
+          body = "foo bar baz"
         )
       ]
     )

@@ -35,6 +35,7 @@ $ make coverage
   * chunked, persistent, redirect, %-enc, ...
   * etag, context, static, env, ...
   * docs
+  * error handling (?!)
   * more specs (?)
   * optimisations (?)
   * httpony.machine (?)
