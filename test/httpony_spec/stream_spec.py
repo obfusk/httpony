@@ -2,7 +2,7 @@
 #
 # File        : stream_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-04
+# Date        : 2015-03-09
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -11,6 +11,13 @@
 
 import httpony.stream as S
 import unittest
+
+def chunker(si):
+  while True:
+    n = int(si.readline())
+    if n == 0: break
+    yield si.split(n)[0].read()
+    si.readline()
 
 class IStringStream_(S.IStringStream):                          # {{{1
 
@@ -83,6 +90,42 @@ class Test_IStringStream(unittest.TestCase):                    # {{{1
     t, d  = s.split(10)
     y     = ["foo\n", "bar\n", "ba"]
     z     = ["z\n"]
+    self.assertEqual(list(t), y)
+    self.assertEqual(list(d), z)
+
+  def test_splitchunked(self):
+    s     = S.IStringStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
+    t, d  = s.splitchunked(chunker)
+    self.assertEqual(t.read(), "foobar\nbaz")
+    self.assertEqual(d.read(), "qux")
+
+  def test_splitchunked_forced(self):
+    s     = S.IStringStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
+    t, d  = s.splitchunked(chunker)
+    self.assertEqual(d.read(), "qux")
+    self.assertEqual(t.read(), "foobar\nbaz")
+
+  def test_splitchunked_chunks(self):
+    s     = S.IStringStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
+    t, d  = s.splitchunked(chunker)
+    self.assertEqual(list(t.readchunks(2)),
+                     ["fo", "ob", "ar", "\nb", "az"])
+    self.assertEqual(d.read(), "qux")
+
+  def test_splitchunked_readline(self):
+    s     = S.IStringStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
+    t, d  = s.splitchunked(chunker, 1)  # test bufsize too
+    y     = ["foobar\n", "baz"]
+    z     = "qux"
+    self.assertEqual(t.readline(), y[0])
+    self.assertEqual(d.readline(), z)
+    self.assertEqual(t.readline(), y[1])
+
+  def test_splitchunked_readlines(self):
+    s     = S.IStringStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
+    t, d  = s.splitchunked(chunker)
+    y     = ["foobar\n", "baz"]
+    z     = ["qux"]
     self.assertEqual(list(t), y)
     self.assertEqual(list(d), z)
 

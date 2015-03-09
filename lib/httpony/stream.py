@@ -2,7 +2,7 @@
 #
 # File        : httpony/stream.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-06
+# Date        : 2015-03-09
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -51,12 +51,31 @@ class IStream(object):                                          # {{{1
     d = IStreamDrop(self, t)
     return (t, d)
 
+  def splitchunked(self, chunks, bufsize = DEFAULT_BUFSIZE):
+    """split stream after chunks"""
+    t = IStreamTakeChunks(chunks(self), bufsize)
+    d = IStreamDrop(self, t)
+    return (t, d)
+
   def close(self):
     """close stream"""
     raise NotImplementedError
                                                                 # }}}1
 
-class IStreamTake(IStream):                                     # {{{1
+class _IStreamTakeBase(IStream):                                # {{{1
+
+  def readline(self):
+    buf = ""
+    while True:
+      data = self.peek(self.bufsize)
+      if data == "": break
+      i = data.find("\n")
+      if i != -1: return buf + self.read(i + 1)
+      buf += self.read(self.bufsize)
+    return buf
+                                                                # }}}1
+
+class IStreamTake(_IStreamTakeBase):                            # {{{1
 
   """first part (n bytes) of split stream"""
 
@@ -86,16 +105,44 @@ class IStreamTake(IStream):                                     # {{{1
     else:
       buf = self.buf; self.buf = ""
       return buf + self.parent.read(m - len(buf))
+                                                                # }}}1
 
-  def readline(self):
-    buf = ""
-    while True:
-      data = self.peek(self.bufsize)
-      if data == "": break
-      i = data.find("\n")
-      if i != -1: return buf + self.read(i + 1)
-      buf += self.read(self.bufsize)
-    return buf
+class IStreamTakeChunks(_IStreamTakeBase):                      # {{{1
+
+  """first part of splitchunked stream"""
+
+  def __init__(self, chunks, bufsize = DEFAULT_BUFSIZE):
+    self.chunks = chunks; self.bufsize = bufsize; self._done = False
+    self.buf = ""
+
+  def done(self):
+    """has this part been read entirely?"""
+    return self._done
+
+  def peek(self, size = None):
+    """peek at first size bytes (read w/o consume)"""
+    if size == -1:
+      self.buf += "".join(self.chunks)
+      return self.buf
+    if size is None: size = self.bufsize
+    while size > len(self.buf):
+      x = next(self.chunks, None)
+      if x is None: break
+      self.buf += x
+    return self.buf[:size]
+
+  def read(self, size = None):
+    if size is None:
+      buf = self.buf + "".join(self.chunks); self.buf = ""
+      self._done = True
+      return buf
+    while size > len(self.buf):
+      x = next(self.chunks, None)
+      if x is None:
+        self._done = True; break
+      self.buf += x
+    buf = self.buf; self.buf = buf[size:]
+    return buf[:size]
                                                                 # }}}1
 
 class IStreamDrop(IStream):                                     # {{{1

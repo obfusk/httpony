@@ -2,7 +2,7 @@
 
     File        : README.md
     Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-    Date        : 2015-03-07
+    Date        : 2015-03-09
 
     Copyright   : Copyright (C) 2015  Felix C. Stegerman
     Version     : v0.0.1
@@ -32,13 +32,15 @@ $ make coverage
 ## TODO
 
   * httpony.server
-  * chunked, persistent, redirect, ...
+  * chunked, persistent, redirect, %-enc, ...
   * etag, context, static, env, ...
   * docs
   * more specs (?)
   * optimisations (?)
   * httpony.machine (?)
   * httpony.middleware (?)
+  * max body & headers (?)
+  * python3 (?)
   * ...
 
 ### Mostly done
