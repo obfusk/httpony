@@ -178,7 +178,19 @@ class Test_Request(unittest.TestCase):                          # {{{1
                   body = "<body>")
     self.assertRegexpMatches(
       x.unparse(),
-      "POST /foo HTTP/1.1\r\n((Foo|X): (bar|42)\r\n)+\r\n<body>"
+      "\\APOST /foo HTTP/1.1\r\n((Foo|X|Content-Length): "
+      "(bar|42|6)\r\n)+\r\n<body>\\Z"
+    )
+
+  def test_unparse_chunked(self):
+    x = H.Request(method = "POST", uri = "/foo",
+                  headers = dict(Foo = "bar", X = "42"),
+                  body = (x for x in ["<bo", "dy>"]))
+    self.assertRegexpMatches(
+      x.unparse(),
+      "\\APOST /foo HTTP/1.1\r\n((Foo|X|Transfer-Encoding): "
+      "(bar|42|chunked)\r\n)+"
+      "\r\n3\r\n<bo\r\n3\r\ndy>\r\n0\r\n\r\n\\Z"
     )
                                                                 # }}}1
 
@@ -250,7 +262,8 @@ class Test_Response(unittest.TestCase):                         # {{{1
                    body = "<body>")
     self.assertRegexpMatches(
       x.unparse(),
-      "HTTP/1.1 200 OK\r\n((Foo|X): (bar|42)\r\n)+\r\n<body>"
+      "\\AHTTP/1.1 200 OK\r\n((Foo|X|Content-Length): "
+      "(bar|42|6)\r\n)+\r\n<body>\\Z"
     )
                                                                 # }}}1
 

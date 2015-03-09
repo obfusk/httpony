@@ -14,6 +14,7 @@
 from . import stream as S
 from . import util as U
 import collections
+import operator
 import urlparse
 
 HTTP_STATUS_CODES = {                                           # {{{1
@@ -150,11 +151,14 @@ class Message(U.Immutable):                                     # {{{1
 
   def __init__(self, **kw):
     super(Message, self).__init__(self._defaults(), **kw)
+    self._Immutable___set("_content_length", None)
     if not isinstance(self.headers, U.idict):
       self._Immutable___set("headers", U.idict(self.headers))
     if isinstance(self.body, str):
       self._Immutable___set("body", (self.body,))
     elif isinstance(self.body, S.IStream):
+      if self.body.length() is not None:
+        self._Immutable___set("_content_length", self.body.length())
       self._Immutable___set("body", self.body.readchunks())
 
   def unparse(self):
@@ -163,11 +167,27 @@ class Message(U.Immutable):                                     # {{{1
 
   def unparse_chunked(self):
     """iterate over chunks of request/response as string"""
+    if not isinstance(self.body, collections.Sized):
+      self.headers["Transfer-Encoding"] = "chunked"
+      chunked = True
+    else:
+      if self._content_length is None:
+        self._Immutable___set(
+          "_content_length",
+          reduce(operator.add, map(len, self.body))
+        )
+      self.headers["Content-Length"] = self._content_length
+      chunked = False
     start_line = self.unparse_start_line()
     headers = ["{}: {}".format(k, v)
                for (k,v) in self.headers.iteritems()]
     yield "".join(S.unstripped_lines([start_line] + headers + [""]))
-    for chunk in self.body: yield chunk
+    if chunked:
+      for chunk in self.body:
+        yield hex(len(chunk))[2:] + S.CRLF + chunk + S.CRLF
+      yield "0" + S.CRLF + S.CRLF
+    else:
+      for chunk in self.body: yield chunk
 
   @property
   def force_body(self):
@@ -181,7 +201,8 @@ class Request(Message):                                         # {{{1
 
   """HTTP request"""
 
-  __slots__ = "method uri version headers body env".split()
+  __slots__ = "method uri version headers body env " \
+              "_content_length".split()
 
   def __init__(self, data = None, **kw):
     if data is not None:
@@ -211,7 +232,8 @@ class Response(Message):                                        # {{{1
 
   """HTTP response"""
 
-  __slots__ = "version status reason headers body".split()
+  __slots__ = "version status reason headers body " \
+              "_content_length".split()
 
   def __init__(self, data = None, **kw):
     if data is not None:
@@ -272,15 +294,16 @@ def generic_messages(si):                                       # {{{1
                                                                 # }}}1
 
 # TODO: extensions, trailer
-def http_chunked_chunks(si):
+def http_chunked_chunks(si):                                    # {{{1
   while True:
     n = int(si.readline(), 16)
     if n == 0: break
     yield si.split(n)[0].read()
     si.readline()
   si.readline()
+                                                                # }}}1
 
-def split_body(msg, bufsize):
+def split_body(msg, bufsize):                                   # {{{1
   """split stream into body and rest"""
   te = msg["headers"].get("Transfer-Encoding", "")
   cl = msg["headers"].get("Content-Length", 0)
@@ -288,6 +311,7 @@ def split_body(msg, bufsize):
     return msg["body"].splitchunked(http_chunked_chunks, bufsize)
   else:
     return msg["body"].split(int(cl), bufsize)
+                                                                # }}}1
 
 def requests(si, bufsize = S.DEFAULT_BUFSIZE):                  # {{{1
   """iterate over HTTP requests"""

@@ -2,7 +2,7 @@
 #
 # File        : httpony/util.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-06
+# Date        : 2015-03-09
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -81,10 +81,14 @@ class Immutable(object):                                        # {{{1
 
   args_are_mandatory = False
 
+  @property
+  def ___slots(self):
+    return [x for x in self.__slots__ if not x.startswith("_")]
+
   def __init__(self, data = None, **kw):
     x = data if data is not None else {}; x.update(kw)
-    ks = set(x.keys()); ss = set(self.__slots__)
-    for k in self.__slots__:
+    ks = set(x.keys()); ss = set(self.___slots)
+    for k in self.___slots:
       if k in x:
         self._Immutable___set(k, x[k]); del x[k]
       else:
@@ -98,7 +102,7 @@ class Immutable(object):                                        # {{{1
     super(Immutable, self).__setattr__(k, v)
 
   def __setattr__(self, k, v):
-    if k in self.__slots__:
+    if k in self.___slots:
       raise AttributeError(
         "'{}' object attribute '{}' is read-only".format(
           self.__class__.__name__, k
@@ -115,7 +119,7 @@ class Immutable(object):                                        # {{{1
     return type(self)(dict(self.iteritems()), **kw)
 
   def iteritems(self):
-    return ((k, getattr(self, k)) for k in self.__slots__)
+    return ((k, getattr(self, k)) for k in self.___slots)
 
   def items(self):
     return list(self.iteritems())
