@@ -2,7 +2,7 @@
 #
 # File        : httpony/server.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-07
+# Date        : 2015-03-09
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -47,14 +47,14 @@ class Server(object):                                           # {{{1
 
   """HTTP server"""
 
-  def __init__(self, handler, server_name = DEFAULT_SERVER):
-    self.handler = handler; self.server_name = server_name
+  def __init__(self, handler, server_info = DEFAULT_SERVER):
+    self.handler = handler; self.server_info = server_info
 
   # TODO
   def default_headers(self):
     """default headers"""
     return {
-      "Server" : self.server_name
+      "Server" : self.server_info
     }
 
   # TODO
