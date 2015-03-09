@@ -146,6 +146,10 @@ class Test_OStringStream(unittest.TestCase):                    # {{{1
 
 class Test_stream(unittest.TestCase):                           # {{{1
 
+  def test_istream(self):
+    si = S.ifile_stream("/dev/null")
+    self.assertEqual(si.length(), 0)
+
   def test_interact(self):
     si = S.IStringStream("foo\nbar\nbaz\n")
     so = S.OStringStream()

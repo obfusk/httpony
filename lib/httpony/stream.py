@@ -11,6 +11,7 @@
 
 """stream abstraction"""
 
+import os
 import StringIO
 
 CRLF            = "\r\n"
@@ -60,6 +61,10 @@ class IStream(object):                                          # {{{1
   def close(self):
     """close stream"""
     raise NotImplementedError
+
+  def length(self):
+    """length (int or None if unknown)"""
+    return None
                                                                 # }}}1
 
 class _IStreamTakeBase(IStream):                                # {{{1
@@ -185,8 +190,8 @@ class IFileStream(IStream):                                     # {{{1
 
   """file input stream"""
 
-  def __init__(self, file):
-    self.file = file
+  def __init__(self, file, length = None):
+    self.file = file; self._length = length
 
   def read(self, size = None):
     return self.file.read(size)
@@ -199,6 +204,9 @@ class IFileStream(IStream):                                     # {{{1
 
   def close(self):
     return self.file.close()
+
+  def length(self):
+    return self._length
                                                                 # }}}1
 
 class OFileStream(OStream):                                     # {{{1
@@ -284,6 +292,10 @@ class ORequestHandlerStream(OFileStream):                       # {{{1
     self.handler = handler
     super(ORequestHandlerStream, self).__init__(handler.wfile)
                                                                 # }}}1
+
+def ifile_stream(name):
+  """file stream (w/ size)"""
+  return IFileStream(open(name, "r"), os.stat(name).st_size)
 
 def interact(istream, ostream, f):
   """map input stream to output stream using a generator function that
