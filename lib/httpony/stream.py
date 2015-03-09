@@ -231,7 +231,8 @@ class IStringStream(IFileStream):                               # {{{1
   """string input stream"""
 
   def __init__(self, data):
-    super(IStringStream, self).__init__(StringIO.StringIO(data))
+    super(IStringStream, self).__init__(StringIO.StringIO(data),
+                                        len(data))
                                                                 # }}}1
 
 class OStringStream(OFileStream):                               # {{{1
