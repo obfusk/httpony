@@ -125,7 +125,9 @@ if __name__ == "__main__":
 # from . import handler
 # X = handler.Handler()
 # @X.any("/*")
-# def foo(self, splat): print(repr(self.request)+"\n"); return "Hi!\n"
+# def foo(self, splat):
+#   print(repr(self.request)+"\n")
+#   return (x for x in ["Hi ...\n", "... there!\n"])
 # Server(X).run(port = 8000, ssl = ("test-data/ssl/localhost.crt",
 #                                   "test-data/ssl/localhost.key"))
 
