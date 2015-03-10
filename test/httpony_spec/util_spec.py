@@ -2,7 +2,7 @@
 #
 # File        : util_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-06
+# Date        : 2015-03-09
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -30,7 +30,7 @@ class Test_idict(unittest.TestCase):                            # {{{1
 
   def test_del(self):
     x = U.idict(Foo = 42); del x['foo']
-    self.assertEqual(x.values(), [])
+    self.assertEqual(list(x.values()), [])
 
   def test_iter(self):
     x = U.idict(Foo = 42, Bar = 37)
@@ -135,7 +135,7 @@ class Test_Immutable(unittest.TestCase):                        # {{{1
 
   def test_items(self):
     x = X(foo = 42, bar = 37)
-    self.assertEqual(x.items(),
+    self.assertEqual(list(x.items()),
                      [("foo", 42), ("bar", 37), ("baz", None)])
 
   def test_eq(self):

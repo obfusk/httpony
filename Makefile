@@ -6,29 +6,30 @@ SHELL       = bash
 LIB         = httpony
 RUN         = server
 
+PY         ?= python$(PYVSN)
 CURL_PATH  ?= /
 PYDOC_PORT ?= 1234
 
 export PYTHONPATH = $(PWD)/lib:$(PWD)/test
 
 test:
-	python test.py
+	$(PY) test.py
 
 test_v:
-	python test.py 2
+	$(PY) test.py 2
 
 coverage:
-	python-coverage run test.py
-	python-coverage html
+	$(PY)-coverage run test.py
+	$(PY)-coverage html
 
 repl:
-	rlwrap --always-readline python -i -c 'from $(LIB) import *'
+	rlwrap --always-readline $(PY) -i -c 'from $(LIB) import *'
 
 run:
-	python -m $(LIB).$(RUN)
+	$(PY) -m $(LIB).$(RUN)
 
 serve_docs:
-	pydoc -p $(PYDOC_PORT)
+	pydoc$(PYVSN) -p $(PYDOC_PORT)
 
 shell:
 	bash

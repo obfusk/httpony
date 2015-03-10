@@ -11,18 +11,24 @@
 
 """HTTP server"""
 
+from __future__ import print_function # DEBUG
+
 from . import http as H
 from . import stream as S
+from . import util as U
 import collections
 import httpony  # for __version__
 import socket
-import SocketServer
 import ssl
+
+try:
+  import SocketServer as SS # python2
+except ImportError:
+  import socketserver as SS # python3
 
 DEFAULT_SERVER = "httpony.server/{}".format(httpony.__version__)
 
-class _ThreadedTCPServer(SocketServer.ThreadingMixIn,
-                         SocketServer.TCPServer):
+class _ThreadedTCPServer(SS.ThreadingMixIn, SS.TCPServer):
   pass
 
 class _ThreadedSSLTCPServer(_ThreadedTCPServer):                # {{{1
@@ -59,7 +65,7 @@ class Server(object):                                           # {{{1
 
   # TODO
   def _requesthandler(self):                                    # {{{2
-    class RequestHandler(SocketServer.StreamRequestHandler):
+    class RequestHandler(SS.StreamRequestHandler):
 
       timeout = 10 # TODO
 
@@ -67,22 +73,22 @@ class Server(object):                                           # {{{1
       def handle(self):
         s = self.httpony_server
         try:
-          print "connect {}".format(self.client_address) # DEBUG
+          print("connect {}".format(self.client_address)) # DEBUG
           reqs  = H.requests(S.IRequestHandlerStream(self))
           so    = S.ORequestHandlerStream(self)
           for req in reqs:
             # ... self.client_address ... chunked ...
             resp = s.handler()(req)
-            for (k, v) in s.default_headers().iteritems():
+            for (k, v) in U.iteritems(s.default_headers()):
               resp.headers.setdefault(k, v)
-            resp.headers["Content-Length"] = len(resp.force_body)
-            so.write(resp.unparse()); so.flush()
-          print "disconnect {}".format(self.client_address) # DEBUG
+            for chunk in resp.unparse_chunked(): so.write(chunk)
+            so.flush()
+          print("disconnect {}".format(self.client_address)) # DEBUG
         except socket.timeout:
-          print "timeout!" # TODO
+          print("timeout!") # TODO
         except ssl.SSLError as e:
           if e.message.find("read operation timed out") != -1:
-            print "timeout!" # TODO
+            print("timeout!") # TODO
           else:
             raise
 
@@ -119,8 +125,8 @@ if __name__ == "__main__":
 # from . import handler
 # X = handler.Handler()
 # @X.any("/*")
-# def foo(self, splat): print repr(self.request)+"\n"; return "Hi!\n"
-# Server(X).run(port = 8000, ssl = ("/tmp/ssl/localhost.crt",
-#                                   "/tmp/ssl/localhost.key"))
+# def foo(self, splat): print(repr(self.request)+"\n"); return "Hi!\n"
+# Server(X).run(port = 8000, ssl = ("test-data/ssl/localhost.crt",
+#                                   "test-data/ssl/localhost.key"))
 
 # vim: set tw=70 sw=2 sts=2 et fdm=marker :

@@ -2,7 +2,7 @@
 #
 # File        : httpony/handler.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-06
+# Date        : 2015-03-09
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -111,11 +111,11 @@ def Handler(name = "Handler"):
 def handler(cls):                                               # {{{1
   """create Handler from class (decorator)"""
   d = cls.__dict__.copy(); ws = {}
-  for k in d.keys():
+  for k in list(d.keys()):
     if isinstance(d[k], _MethodWrapper):
       ws[k] = d[k]; del d[k]
   c = type(cls.__name__, (HandlerBase,), d)
-  for (k, w) in ws.iteritems():
+  for (k, w) in U.iteritems(ws):
     setattr(c, k, getattr(c, w.call)(*w.args)(w.method))
   return c
                                                                 # }}}1

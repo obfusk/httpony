@@ -13,9 +13,15 @@
 
 from . import stream as S
 from . import util as U
+from .util import BY, STR
+from functools import reduce
 import collections
 import operator
-import urlparse
+
+try:
+  import urlparse                 # python2
+except ImportError:
+  import urllib.parse as urlparse # python3
 
 HTTP_STATUS_CODES = {                                           # {{{1
   100 : "Continue",
@@ -140,8 +146,8 @@ class URI(U.Immutable):                                         # {{{1
       return None
 
   def __eq__(self, rhs):
-    if isinstance(rhs, str):
-      rhs = type(self)(rhs)
+    if isinstance(rhs, str  ): rhs = type(self)(rhs)
+    if isinstance(rhs, bytes): rhs = type(self)(STR(rhs))
     return super(URI, self).__eq__(rhs)
                                                                 # }}}1
 
@@ -155,6 +161,8 @@ class Message(U.Immutable):                                     # {{{1
     if not isinstance(self.headers, U.idict):
       self._Immutable___set("headers", U.idict(self.headers))
     if isinstance(self.body, str):
+      self._Immutable___set("body", (BY(self.body),))
+    elif isinstance(self.body, bytes):
       self._Immutable___set("body", (self.body,))
     elif isinstance(self.body, S.IStream):
       if self.body.length() is not None:
@@ -163,7 +171,7 @@ class Message(U.Immutable):                                     # {{{1
 
   def unparse(self):
     """request/response as string"""
-    return "".join(self.unparse_chunked())
+    return b"".join(self.unparse_chunked())
 
   def unparse_chunked(self):
     """iterate over chunks of request/response as string"""
@@ -178,14 +186,15 @@ class Message(U.Immutable):                                     # {{{1
         )
       self.headers["Content-Length"] = self._content_length
       chunked = False
-    start_line = self.unparse_start_line()
-    headers = ["{}: {}".format(k, v)
-               for (k,v) in self.headers.iteritems()]
-    yield "".join(S.unstripped_lines([start_line] + headers + [""]))
+    start_line = BY(self.unparse_start_line())
+    headers = [BY("{}: {}".format(k, v))
+               for (k,v) in U.iteritems(self.headers)]
+    yield b"".join(line + S.CRLFb
+                   for line in [start_line] + headers + [b""])
     if chunked:
-      for chunk in self.body:
-        yield hex(len(chunk))[2:] + S.CRLF + chunk + S.CRLF
-      yield "0" + S.CRLF + S.CRLF
+      for chunk in (BY(c) for c in self.body):
+        yield BY(hex(len(chunk))[2:]) + S.CRLFb + chunk + S.CRLFb
+      yield b"0" + S.CRLFb + S.CRLFb
     else:
       for chunk in self.body: yield chunk
 
@@ -193,7 +202,8 @@ class Message(U.Immutable):                                     # {{{1
   def force_body(self):
     """force body into a 1-tuple and return its only element"""
     if not (isinstance(self.body, tuple) and len(self.body) == 1):
-      self._Immutable___set("body", ("".join(self.body),))
+      self._Immutable___set("body",
+                            (b"".join(BY(c) for c in self.body),))
     return self.body[0]
                                                                 # }}}1
 
@@ -254,12 +264,12 @@ class Response(Message):                                        # {{{1
                           "either 2 or 3 elements")
       elif isinstance(data, int):
         kw = dict(status = data)
-      elif isinstance(data, str) or \
+      elif isinstance(data, str) or isinstance(data, bytes) or \
            isinstance(data, collections.Iterable):
         kw = dict(body = data)
       else:
-        raise TypeError("data argument must be a " +
-                        "mapping, tuple, int, str, or iterable")
+        raise TypeError("data argument must be a mapping, "
+                        "tuple, int, str, bytes, or iterable")
     super(Response, self).__init__(**kw)
     if "reason" not in kw:
       self._Immutable___set("reason", HTTP_STATUS_CODES[self.status])
@@ -279,11 +289,11 @@ def generic_messages(si):                                       # {{{1
   while True:
     headers = U.idict()
     while True:
-      start_line = si.readline()
+      start_line = STR(si.readline())
       if start_line == "": return
       if start_line != S.CRLF: break
     while True:
-      line = si.readline()
+      line = STR(si.readline())
       if line == "": return
       if line == S.CRLF: break
       k, v = line.split(":", 1); headers[k] = v.strip()
@@ -296,7 +306,7 @@ def generic_messages(si):                                       # {{{1
 # TODO: extensions, trailer
 def http_chunked_chunks(si):                                    # {{{1
   while True:
-    n = int(si.readline(), 16)
+    n = int(STR(si.readline()), 16)
     if n == 0: break
     yield si.split(n)[0].read()
     si.readline()

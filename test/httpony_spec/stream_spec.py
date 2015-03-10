@@ -19,125 +19,125 @@ def chunker(si):
     yield si.split(n)[0].read()
     si.readline()
 
-class IStringStream_(S.IStringStream):                          # {{{1
+class IBytesStream_(S.IBytesStream):                            # {{{1
 
   def readlines_orig(self):
     return S.IStream.readlines(self)
                                                                 # }}}1
 
-class Test_IStringStream(unittest.TestCase):                    # {{{1
+class Test_IBytesStrean(unittest.TestCase):                     # {{{1
 
   def test_read(self):
-    s = S.IStringStream("foo bar baz")
-    y = "foo bar baz"
+    s = S.IBytesStream("foo bar baz")
+    y = b"foo bar baz"
     self.assertEqual(s.read(), y)
 
   def test_read_n(self):
-    s = S.IStringStream("foo bar baz")
-    y = "foo bar"
+    s = S.IBytesStream("foo bar baz")
+    y = b"foo bar"
     self.assertEqual(s.read(7), y)
 
   def test_readline(self):
-    s = S.IStringStream("foo\nbar\nbaz\n")
-    y = "foo\n"
-    z = "bar\n"
+    s = S.IBytesStream("foo\nbar\nbaz\n")
+    y = b"foo\n"
+    z = b"bar\n"
     self.assertEqual(s.readline(), y)
     self.assertEqual(s.readline(), z)
 
   def test_readlines(self):
-    s = S.IStringStream("foo\nbar\nbaz\n")
-    y = ["foo\n", "bar\n", "baz\n"]
+    s = S.IBytesStream("foo\nbar\nbaz\n")
+    y = [b"foo\n", b"bar\n", b"baz\n"]
     self.assertEqual(list(s), y)
 
   def test_readlines_from_istream(self):
-    s = IStringStream_("foo\nbar\nbaz\n")
-    y = ["foo\n", "bar\n", "baz\n"]
+    s = IBytesStream_("foo\nbar\nbaz\n")
+    y = [b"foo\n", b"bar\n", b"baz\n"]
     self.assertEqual(list(s.readlines_orig()), y)
 
   def test_readchunks(self):
-    s = S.IStringStream("foo\nbar\nbaz\n")
-    y = ["foo\nbar\n", "baz\n"]
+    s = S.IBytesStream("foo\nbar\nbaz\n")
+    y = [b"foo\nbar\n", b"baz\n"]
     self.assertEqual(list(s.readchunks(8)), y)
 
   def test_split_chunks(self):
-    s     = S.IStringStream("foo\nbar\nbaz\n")
+    s     = S.IBytesStream("foo\nbar\nbaz\n")
     t, d  = s.split(10)
-    y     = ["fo", "o\n", "ba", "r\n", "ba"]
-    z     = "z\n"
+    y     = [b"fo", b"o\n", b"ba", b"r\n", b"ba"]
+    z     = b"z\n"
     self.assertEqual(list(t.readchunks(2)), y)
     self.assertEqual(d.read(), z)
 
   def test_split_chunks_forced(self):
-    s     = S.IStringStream("foo\nbar\nbaz\n")
+    s     = S.IBytesStream("foo\nbar\nbaz\n")
     t, d  = s.split(10)
-    y     = ["fo", "o\n", "ba", "r\n", "ba"]
-    z     = "z\n"
+    y     = [b"fo", b"o\n", b"ba", b"r\n", b"ba"]
+    z     = b"z\n"
     self.assertEqual(d.read(), z)
     self.assertEqual(list(t.readchunks(2)), y)
 
   def test_split_readline(self):
-    s     = S.IStringStream("foo\nbar\nbaz\n")
+    s     = S.IBytesStream("foo\nbar\nbaz\n")
     t, d  = s.split(10, 1)  # test bufsize too
-    y     = ["foo\n", "bar\n", "ba"]
-    z     = "z\n"
+    y     = [b"foo\n", b"bar\n", b"ba"]
+    z     = b"z\n"
     self.assertEqual(t.readline(), y[0])
     self.assertEqual(t.readline(), y[1])
     self.assertEqual(d.readline(), z)
     self.assertEqual(t.readline(), y[2])
 
   def test_split_readlines(self):
-    s     = S.IStringStream("foo\nbar\nbaz\n")
+    s     = S.IBytesStream("foo\nbar\nbaz\n")
     t, d  = s.split(10)
-    y     = ["foo\n", "bar\n", "ba"]
-    z     = ["z\n"]
+    y     = [b"foo\n", b"bar\n", b"ba"]
+    z     = [b"z\n"]
     self.assertEqual(list(t), y)
     self.assertEqual(list(d), z)
 
   def test_splitchunked(self):
-    s     = S.IStringStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
+    s     = S.IBytesStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
     t, d  = s.splitchunked(chunker)
-    self.assertEqual(t.read(), "foobar\nbaz")
-    self.assertEqual(d.read(), "qux")
+    self.assertEqual(t.read(), b"foobar\nbaz")
+    self.assertEqual(d.read(), b"qux")
 
   def test_splitchunked_forced(self):
-    s     = S.IStringStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
+    s     = S.IBytesStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
     t, d  = s.splitchunked(chunker)
-    self.assertEqual(d.read(), "qux")
-    self.assertEqual(t.read(), "foobar\nbaz")
+    self.assertEqual(d.read(), b"qux")
+    self.assertEqual(t.read(), b"foobar\nbaz")
 
   def test_splitchunked_chunks(self):
-    s     = S.IStringStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
+    s     = S.IBytesStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
     t, d  = s.splitchunked(chunker)
     self.assertEqual(list(t.readchunks(2)),
-                     ["fo", "ob", "ar", "\nb", "az"])
-    self.assertEqual(d.read(), "qux")
+                     [b"fo", b"ob", b"ar", b"\nb", b"az"])
+    self.assertEqual(d.read(), b"qux")
 
   def test_splitchunked_readline(self):
-    s     = S.IStringStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
+    s     = S.IBytesStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
     t, d  = s.splitchunked(chunker, 1)  # test bufsize too
-    y     = ["foobar\n", "baz"]
-    z     = "qux"
+    y     = [b"foobar\n", b"baz"]
+    z     = b"qux"
     self.assertEqual(t.readline(), y[0])
     self.assertEqual(d.readline(), z)
     self.assertEqual(t.readline(), y[1])
 
   def test_splitchunked_readlines(self):
-    s     = S.IStringStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
+    s     = S.IBytesStream("3\nfoo\n7\nbar\nbaz\n0\nqux")
     t, d  = s.splitchunked(chunker)
-    y     = ["foobar\n", "baz"]
-    z     = ["qux"]
+    y     = [b"foobar\n", b"baz"]
+    z     = [b"qux"]
     self.assertEqual(list(t), y)
     self.assertEqual(list(d), z)
 
   # ...
                                                                 # }}}1
 
-class Test_OStringStream(unittest.TestCase):                    # {{{1
+class Test_OBytesStream(unittest.TestCase):                     # {{{1
 
   def test_write(self):
-    s = S.OStringStream()
-    y = "foo bar"
-    z = "baz qux"
+    s = S.OBytesStream()
+    y = b"foo bar"
+    z = b"baz qux"
     s.write(y)
     self.assertEqual(s.getvalue(), y)
     s.write(z)
@@ -146,28 +146,9 @@ class Test_OStringStream(unittest.TestCase):                    # {{{1
 
 class Test_stream(unittest.TestCase):                           # {{{1
 
-  def test_istream(self):
+  def test_ifile_stream(self):
     si = S.ifile_stream("/dev/null")
     self.assertEqual(si.length(), 0)
-
-  def test_interact(self):
-    si = S.IStringStream("foo\nbar\nbaz\n")
-    so = S.OStringStream()
-    def f(xs):
-      for line in S.stripped_lines(xs):
-        yield line.upper()[::-1] + "\n"
-    S.interact(si, so, f)
-    self.assertEqual(so.getvalue(), "OOF\nRAB\nZAB\n")
-
-  def test_stripped_lines(self):
-    x = "foo\nbar\r\nbaz\n".splitlines()
-    y = ["foo", "bar", "baz"]
-    self.assertEqual(list(S.stripped_lines(x)), y)
-
-  def test_unstripped_lines(self):
-    x = "foo bar baz".split()
-    y = ["foo\r\n", "bar\r\n", "baz\r\n"]
-    self.assertEqual(list(S.unstripped_lines(x)), y)
                                                                 # }}}1
 
 # ...

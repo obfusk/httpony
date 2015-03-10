@@ -12,6 +12,7 @@
 """utilities like case-insensitive dict and Immutable base class"""
 
 import collections
+import sys
 
 class idict(collections.MutableMapping):                        # {{{1
 
@@ -42,9 +43,17 @@ class idict(collections.MutableMapping):                        # {{{1
 
   # ... and these are nice to have ...
 
+  if sys.version_info.major != 2:
+    def iteritems(self):
+      return (x for x in self.items())
+
   # lowercase keys
   def iteritems_lower(self):
-    return ((k, v[1]) for k, v in self._data.iteritems())
+    return ((k, v[1]) for k, v in iteritems(self._data))
+
+  if sys.version_info.major != 2:
+    def items_lower(self):
+      return list(self.iteritems_lower())
 
   def copy(self):
     return type(self)(self._data.values())
@@ -52,19 +61,33 @@ class idict(collections.MutableMapping):                        # {{{1
   # ... and we also need to override these
 
   def __eq__(self, rhs):
-    if not isinstance(rhs, collections.Mapping):
-      return NotImplemented
-    if not isinstance(rhs, idict):
-      rhs = idict(rhs)
+    if not isinstance(rhs, collections.Mapping): return NotImplemented
+    if not isinstance(rhs, idict): rhs = idict(rhs)
     return dict(self.iteritems_lower()) == dict(rhs.iteritems_lower())
 
-  def __cmp__(self, rhs):
-    if not isinstance(rhs, collections.Mapping):
-      return NotImplemented
-    if not isinstance(rhs, idict):
-      rhs = idict(rhs)
-    return dict(self.iteritems_lower()) \
-      .__cmp__(dict(rhs.iteritems_lower()))
+  def __lt__(self, rhs):
+    if not isinstance(rhs, collections.Mapping): return NotImplemented
+    if not isinstance(rhs, idict): rhs = idict(rhs)
+    return sorted(self.iteritems_lower()) < \
+           sorted(rhs.iteritems_lower())
+
+  def __le__(self, rhs):
+    if not isinstance(rhs, collections.Mapping): return NotImplemented
+    if not isinstance(rhs, idict): rhs = idict(rhs)
+    return sorted(self.iteritems_lower()) <= \
+           sorted(rhs.iteritems_lower())
+
+  def __gt__(self, rhs):
+    if not isinstance(rhs, collections.Mapping): return NotImplemented
+    if not isinstance(rhs, idict): rhs = idict(rhs)
+    return sorted(self.iteritems_lower()) > \
+           sorted(rhs.iteritems_lower())
+
+  def __ge__(self, rhs):
+    if not isinstance(rhs, collections.Mapping): return NotImplemented
+    if not isinstance(rhs, idict): rhs = idict(rhs)
+    return sorted(self.iteritems_lower()) >= \
+           sorted(rhs.iteritems_lower())
 
   def __repr__(self):
     return '{}({})'.format(
@@ -121,18 +144,32 @@ class Immutable(object):                                        # {{{1
   def iteritems(self):
     return ((k, getattr(self, k)) for k in self.___slots)
 
-  def items(self):
-    return list(self.iteritems())
+  if sys.version_info.major == 2:
+    def items(self):
+      return list(self.iteritems())
+  else:
+    def items(self):
+      return self.iteritems()
 
   def __eq__(self, rhs):
-    if not isinstance(rhs, type(self)):
-      return NotImplemented
+    if not isinstance(rhs, type(self)): return NotImplemented
     return dict(self.iteritems()) == dict(rhs.iteritems())
 
-  def __cmp__(self, rhs):
-    if not isinstance(rhs, type(self)):
-      return NotImplemented
-    return dict(self.iteritems()).__cmp__(dict(rhs.iteritems()))
+  def __lt__(self, rhs):
+    if not isinstance(rhs, type(self)): return NotImplemented
+    return sorted(self.iteritems()) < sorted(rhs.iteritems())
+
+  def __le__(self, rhs):
+    if not isinstance(rhs, type(self)): return NotImplemented
+    return sorted(self.iteritems()) <= sorted(rhs.iteritems())
+
+  def __gt__(self, rhs):
+    if not isinstance(rhs, type(self)): return NotImplemented
+    return sorted(self.iteritems()) > sorted(rhs.iteritems())
+
+  def __ge__(self, rhs):
+    if not isinstance(rhs, type(self)): return NotImplemented
+    return sorted(self.iteritems()) >= sorted(rhs.iteritems())
 
   def __repr__(self):
     return '{}({})'.format(
@@ -141,6 +178,32 @@ class Immutable(object):                                        # {{{1
                 for (k,v) in self.iteritems())
     )
                                                                 # }}}1
+
+if sys.version_info.major == 2:
+  def iteritems(x):
+    """python2's iteritems()"""
+    return x.iteritems()
+else:
+  def iteritems(x):
+    """python3's items()"""
+    return x.items()
+
+if sys.version_info.major == 2:
+  def STR(x):
+    """-> str"""
+    return str(x)
+  def BY(x):
+    """-> bytes"""
+    return bytes(x)
+else:
+  def STR(x):
+    """-> str"""
+    if isinstance(x, str): return x
+    return str(x, encoding = "utf8")
+  def BY(x):
+    """-> bytes"""
+    if isinstance(x, bytes): return x
+    return bytes(x, encoding = "utf8")
 
 # ...
 

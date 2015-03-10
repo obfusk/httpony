@@ -2,7 +2,7 @@
 #
 # File        : httpony/client.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-07
+# Date        : 2015-03-09
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+

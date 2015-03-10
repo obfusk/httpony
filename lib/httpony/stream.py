@@ -11,10 +11,12 @@
 
 """stream abstraction"""
 
+from .util import BY
+from io import BytesIO
 import os
-import StringIO
 
-CRLF            = "\r\n"
+CRLF            =  "\r\n"
+CRLFb           = b"\r\n"
 DEFAULT_BUFSIZE = 1024
 
 class IStream(object):                                          # {{{1
@@ -70,11 +72,11 @@ class IStream(object):                                          # {{{1
 class _IStreamTakeBase(IStream):                                # {{{1
 
   def readline(self):
-    buf = ""
+    buf = b""
     while True:
       data = self.peek(self.bufsize)
-      if data == "": break
-      i = data.find("\n")
+      if data == b"": break
+      i = data.find(b"\n")
       if i != -1: return buf + self.read(i + 1)
       buf += self.read(self.bufsize)
     return buf
@@ -86,7 +88,7 @@ class IStreamTake(_IStreamTakeBase):                            # {{{1
 
   def __init__(self, parent, n, bufsize = DEFAULT_BUFSIZE):
     self.parent = parent; self.n = n; self.bufsize = bufsize
-    self.buf = ""
+    self.buf = b""
 
   def done(self):
     """has this part been read entirely?"""
@@ -108,7 +110,7 @@ class IStreamTake(_IStreamTakeBase):                            # {{{1
       buf = self.buf; self.buf = buf[m:]
       return buf[:m]
     else:
-      buf = self.buf; self.buf = ""
+      buf = self.buf; self.buf = b""
       return buf + self.parent.read(m - len(buf))
                                                                 # }}}1
 
@@ -118,7 +120,7 @@ class IStreamTakeChunks(_IStreamTakeBase):                      # {{{1
 
   def __init__(self, chunks, bufsize = DEFAULT_BUFSIZE):
     self.chunks = chunks; self.bufsize = bufsize; self._done = False
-    self.buf = ""
+    self.buf = b""
 
   def done(self):
     """has this part been read entirely?"""
@@ -127,7 +129,7 @@ class IStreamTakeChunks(_IStreamTakeBase):                      # {{{1
   def peek(self, size = None):
     """peek at first size bytes (read w/o consume)"""
     if size == -1:
-      self.buf += "".join(self.chunks)
+      self.buf += b"".join(self.chunks)
       return self.buf
     if size is None: size = self.bufsize
     while size > len(self.buf):
@@ -138,7 +140,7 @@ class IStreamTakeChunks(_IStreamTakeBase):                      # {{{1
 
   def read(self, size = None):
     if size is None:
-      buf = self.buf + "".join(self.chunks); self.buf = ""
+      buf = self.buf + b"".join(self.chunks); self.buf = b""
       self._done = True
       return buf
     while size > len(self.buf):
@@ -217,7 +219,7 @@ class OFileStream(OStream):                                     # {{{1
     self.file = file
 
   def write(self, data):
-    return self.file.write(data)
+    return self.file.write(BY(data))
 
   def close(self):
     return self.file.close()
@@ -226,21 +228,21 @@ class OFileStream(OStream):                                     # {{{1
     return self.file.flush()
                                                                 # }}}1
 
-class IStringStream(IFileStream):                               # {{{1
+class IBytesStream(IFileStream):                                # {{{1
 
-  """string input stream"""
+  """bytes input stream"""
 
   def __init__(self, data):
-    super(IStringStream, self).__init__(StringIO.StringIO(data),
-                                        len(data))
+    data = BY(data)
+    super(IBytesStream, self).__init__(BytesIO(data), len(data))
                                                                 # }}}1
 
-class OStringStream(OFileStream):                               # {{{1
+class OBytesStream(OFileStream):                                # {{{1
 
-  """string output stream"""
+  """bytes output stream"""
 
   def __init__(self):
-    super(OStringStream, self).__init__(StringIO.StringIO())
+    super(OBytesStream, self).__init__(BytesIO())
 
   def getvalue(self):
     return self.file.getvalue()
@@ -296,24 +298,7 @@ class ORequestHandlerStream(OFileStream):                       # {{{1
 
 def ifile_stream(name):
   """file stream (w/ size)"""
-  return IFileStream(open(name, "r"), os.stat(name).st_size)
-
-def interact(istream, ostream, f):
-  """map input stream to output stream using a generator function that
-  returns chunks"""
-  for chunk in f(istream):
-    if chunk is None:
-      ostream.flush()
-    else:
-      ostream.write(chunk)
-
-def stripped_lines(lines):
-  """wraps line iterator, strips trailing '\\r' and '\\n'"""
-  return (line.rstrip(CRLF) for line in lines)
-
-def unstripped_lines(lines):
-  """wraps line iterator, adds trailing '\\r\\n'"""
-  return (line + CRLF for line in lines)
+  return IFileStream(open(name, "rb"), os.stat(name).st_size)
 
 # ...
 

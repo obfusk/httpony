@@ -41,7 +41,6 @@ $ make coverage
   * httpony.machine (?)
   * httpony.middleware (?)
   * max body & headers (?)
-  * python3 (?)
   * ...
 
 ### Mostly done

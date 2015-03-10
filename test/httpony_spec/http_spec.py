@@ -85,7 +85,7 @@ class Test_Request(unittest.TestCase):                          # {{{1
       dict(x.iteritems()),  # also tests iteritems
       dict(
         method = "GET", uri = "/", version = "HTTP/1.1",
-        headers = U.idict(), body = ("",), env = {}
+        headers = U.idict(), body = (b"",), env = {}
       )
     )
 
@@ -96,7 +96,7 @@ class Test_Request(unittest.TestCase):                          # {{{1
       dict(x.iteritems()),
       dict(
         method = "POST", uri = "/foo", version = "HTTP/1.1",
-        headers = U.idict(Foo = "bar"), body = ("<body>",), env = {}
+        headers = U.idict(Foo = "bar"), body = (b"<body>",), env = {}
       )
     )
 
@@ -107,7 +107,7 @@ class Test_Request(unittest.TestCase):                          # {{{1
       dict(x.iteritems()),
       dict(
         method = "POST", uri = "/foo", version = "HTTP/1.1",
-        headers = U.idict(Foo = "bar"), body = ("<body>",), env = {}
+        headers = U.idict(Foo = "bar"), body = (b"<body>",), env = {}
       )
     )
 
@@ -131,19 +131,19 @@ class Test_Request(unittest.TestCase):                          # {{{1
 
   def test_init_body_str(self):
     x = H.Request(body = "<body>")
-    self.assertEqual(x.body, ("<body>",))
+    self.assertEqual(x.body, (b"<body>",))
 
   def test_init_body_IStream(self):
-    x = H.Request(body = S.IStringStream("<body>"))
+    x = H.Request(body = S.IBytesStream("<body>"))
     self.assertIsInstance(x.body, type(x for x in []))
-    self.assertEqual("".join(x.body), "<body>")
+    self.assertEqual(b"".join(x.body), b"<body>")
 
   def test_force_body(self):
     x = H.Request(body = (x for x in "foo bar baz".split()))
     self.assertIsInstance(x.body, type(x for x in []))
-    self.assertEqual(x.force_body, "foobarbaz")
+    self.assertEqual(x.force_body, b"foobarbaz")
     self.assertIsInstance(x.body, tuple)
-    self.assertEqual(x.body, ("foobarbaz",))
+    self.assertEqual(x.body, (b"foobarbaz",))
 
   def test_eq(self):
     x = H.Request(body = "foo")
@@ -164,7 +164,7 @@ class Test_Request(unittest.TestCase):                          # {{{1
     x = H.Request(body = "<body>")
     y = [("method", "GET"), ("uri", H.URI("/")),
          ("version", "HTTP/1.1"), ("headers", U.idict()),
-         ("body", ("<body>",)), ("env", {})]
+         ("body", (b"<body>",)), ("env", {})]
     self.assertEqual(
       repr(x),
       "Request({})".format(
@@ -177,7 +177,7 @@ class Test_Request(unittest.TestCase):                          # {{{1
                   headers = dict(Foo = "bar", X = "42"),
                   body = "<body>")
     self.assertRegexpMatches(
-      x.unparse(),
+      U.STR(x.unparse()),
       "\\APOST /foo HTTP/1.1\r\n((Foo|X|Content-Length): "
       "(bar|42|6)\r\n)+\r\n<body>\\Z"
     )
@@ -187,7 +187,7 @@ class Test_Request(unittest.TestCase):                          # {{{1
                   headers = dict(Foo = "bar", X = "42"),
                   body = (x for x in ["<bo", "dy>"]))
     self.assertRegexpMatches(
-      x.unparse(),
+      U.STR(x.unparse()),
       "\\APOST /foo HTTP/1.1\r\n((Foo|X|Transfer-Encoding): "
       "(bar|42|chunked)\r\n)+"
       "\r\n3\r\n<bo\r\n3\r\ndy>\r\n0\r\n\r\n\\Z"
@@ -205,13 +205,14 @@ class Test_Response(unittest.TestCase):                         # {{{1
       dict(x.iteritems()),
       dict(
         version = "HTTP/1.1", status = 404, reason = "Not Found",
-        headers = U.idict(Foo = "bar"), body = ("",)
+        headers = U.idict(Foo = "bar"), body = (b"",)
       )
     )
 
   def test_init_data_no_mapping_etc(self):
-    with self.assertRaisesRegexp(TypeError, "must be a mapping, " +
-                                "tuple, int, str, or iterable"):
+    with self.assertRaisesRegexp(TypeError, "must be a mapping, "
+                                 "tuple, int, str, bytes, "
+                                 "or iterable"):
       H.Response(3.14)
 
   def test_init_data_wrong_tuple(self):
@@ -225,7 +226,7 @@ class Test_Response(unittest.TestCase):                         # {{{1
       dict(x.iteritems()),
       dict(
         version = "HTTP/1.1", status = 404, reason = "Not Found",
-        headers = U.idict(Foo = "bar"), body = ("<body>",)
+        headers = U.idict(Foo = "bar"), body = (b"<body>",)
       )
     )
 
@@ -236,7 +237,7 @@ class Test_Response(unittest.TestCase):                         # {{{1
       dict(
         version = "HTTP/1.1", status = 500,
         reason = "Internal Server Error",
-        headers = U.idict(), body = ("",)
+        headers = U.idict(), body = (b"",)
       )
     )
 
@@ -246,7 +247,7 @@ class Test_Response(unittest.TestCase):                         # {{{1
       dict(x.iteritems()),
       dict(
         version = "HTTP/1.1", status = 200, reason = "OK",
-        headers = U.idict(), body = ("<body>",)
+        headers = U.idict(), body = (b"<body>",)
       )
     )
 
@@ -261,7 +262,7 @@ class Test_Response(unittest.TestCase):                         # {{{1
                    headers = dict(Foo = "bar", X = "42"),
                    body = "<body>")
     self.assertRegexpMatches(
-      x.unparse(),
+      U.STR(x.unparse()),
       "\\AHTTP/1.1 200 OK\r\n((Foo|X|Content-Length): "
       "(bar|42|6)\r\n)+\r\n<body>\\Z"
     )
@@ -273,7 +274,7 @@ class Test_http(unittest.TestCase):                             # {{{1
     r1  = "GET /foo HTTP/1.1\r\nContent-Length: 7\r\n\r\n<body1>"
     r2  = "GET /bar HTTP/1.1\r\nContent-Length: 7\r\n\r\n<body2>"
     self.assertEqual(
-      list(H.force_bodies(H.requests(S.IStringStream(r1 + r2)))),
+      list(H.force_bodies(H.requests(S.IBytesStream(r1 + r2)))),
       [
         H.Request(
           method = "GET", uri = "/foo",
@@ -292,7 +293,7 @@ class Test_http(unittest.TestCase):                             # {{{1
     r3  = "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n" \
           "4\r\nfoo \r\n7\r\nbar baz\r\n0\r\n\r\n"
     self.assertEqual(
-      list(H.force_bodies(H.responses(S.IStringStream(r1+r2+r3)))),
+      list(H.force_bodies(H.responses(S.IBytesStream(r1+r2+r3)))),
       [
         H.Response(
           status = 200, reason = "OK",
