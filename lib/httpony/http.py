@@ -145,6 +145,15 @@ class URI(U.Immutable):                                         # {{{1
     else:
       return None
 
+  def with_scheme(self, scheme):
+    """with other scheme"""
+    return type(self)(scheme + "://" + self.schemeless_uri)
+
+  def with_host_and_port(self, host_and_port):
+    """with other host:port"""
+    return type(self)(self.scheme + "://" + host_and_port +
+                      self.relative_uri)
+
   def __eq__(self, rhs):
     if isinstance(rhs, str  ): rhs = type(self)(rhs)
     if isinstance(rhs, bytes): rhs = type(self)(STR(rhs))
@@ -218,16 +227,20 @@ class Request(Message):                                         # {{{1
 
   def __init__(self, data = None, **kw):
     if data is not None:
-      if len(kw):
-        raise TypeError("arguments must either be " +
-                        "data or keywords, not both")
-      elif isinstance(data, collections.Mapping):
-        kw = data
+      if isinstance(data, collections.Mapping):
+        kw = dict(data, **kw)
       else:
         raise TypeError("data argument must be a mapping")
     super(Request, self).__init__(**kw)
     if not isinstance(self.uri, URI):
       self._Immutable___set("uri", URI(self.uri))
+    if not self.uri.host and "Host" in self.headers:
+      self._Immutable___set(
+        "uri", self.uri.with_host_and_port(self.headers["Host"])
+      )
+    if "scheme" in self.env:
+      self._Immutable___set("uri",
+                            self.uri.with_scheme(self.env["scheme"]))
 
   def unparse_start_line(self):
     return "{} {} {}".format(self.method, self.uri.relative_uri,
@@ -249,11 +262,11 @@ class Response(Message):                                        # {{{1
 
   def __init__(self, data = None, **kw):
     if data is not None:
-      if len(kw):
+      if isinstance(data, collections.Mapping):
+        kw = dict(data, **kw)
+      elif len(kw):
         raise TypeError("arguments must either be "
                         "data or keywords, not both")
-      elif isinstance(data, collections.Mapping):
-        kw = data
       elif isinstance(data, tuple):
         if len(data) == 2:
           status, body = data

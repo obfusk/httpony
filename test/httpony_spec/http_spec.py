@@ -2,7 +2,7 @@
 #
 # File        : http_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-09
+# Date        : 2015-04-01
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -115,9 +115,8 @@ class Test_Request(unittest.TestCase):                          # {{{1
     with self.assertRaisesRegexp(TypeError, "unknown keys"):
       H.Request(foo = 42)
 
-  def test_init_no_kwds_and_data(self):
-    with self.assertRaisesRegexp(TypeError, "arguments must either " +
-                                            "be data or keywords"):
+  def test_init_kwds_and_data_no_mapping(self):
+    with self.assertRaisesRegexp(TypeError, "must be a mapping"):
       H.Request("<body>", method = "POST")
 
   def test_init_data_no_mapping(self):

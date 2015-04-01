@@ -13,11 +13,12 @@
 
 from __future__ import print_function # DEBUG
 
-from . import http as H
+from . import handler as H
+from . import http as HTTP
 from . import stream as S
 from . import util as U
 import collections
-import httpony  # for __version__
+import httpony  # for DEFAULT_SERVER
 import socket
 import ssl
 
@@ -26,12 +27,12 @@ try:
 except ImportError:
   import socketserver as SS # python3
 
-DEFAULT_SERVER = "httpony.server/{}".format(httpony.__version__)
-
 class _ThreadedTCPServer(SS.ThreadingMixIn, SS.TCPServer):
-  pass
+  scheme = HTTP.HTTP_SCHEME
 
 class _ThreadedSSLTCPServer(_ThreadedTCPServer):                # {{{1
+
+  scheme = HTTP.HTTPS_SCHEME
 
   def __init__(self, server_address, RequestHandlerClass,
                certfile, keyfile = None, password = None):
@@ -53,7 +54,7 @@ class Server(object):                                           # {{{1
 
   """HTTP server"""
 
-  def __init__(self, handler, server_info = DEFAULT_SERVER):
+  def __init__(self, handler, server_info = httpony.DEFAULT_SERVER):
     self.handler = handler; self.server_info = server_info
 
   # TODO
@@ -62,6 +63,16 @@ class Server(object):                                           # {{{1
     return {
       "Server" : self.server_info
     }
+
+  # TODO
+  def default_env(self, rh):
+    """default env"""
+    return dict(
+      remote_addr = rh.client_address,
+      scheme      = rh.server.scheme,
+      server_addr = rh.server.server_address,
+      server_info = self.server_info
+    )
 
   # TODO
   def _requesthandler(self):                                    # {{{2
@@ -74,12 +85,11 @@ class Server(object):                                           # {{{1
         s = self.httpony_server
         try:
           print("connect {}".format(self.client_address)) # DEBUG
-          reqs  = H.requests(S.IRequestHandlerStream(self))
+          reqs  = HTTP.requests(S.IRequestHandlerStream(self))
           so    = S.ORequestHandlerStream(self)
           for req in reqs:
             with_body = req.method != "HEAD"  # TODO
-            # ... self.client_address ...
-            resp = s.handler()(req)
+            resp = H.handle(s.handler, req, s.default_env(self))
             for (k, v) in U.iteritems(s.default_headers()):
               resp.headers.setdefault(k, v)
             for chunk in resp.unparse_chunked(with_body):
@@ -101,7 +111,8 @@ class Server(object):                                           # {{{1
   def run(self, host = "localhost", port = None, ssl = None):   # {{{2
     """run the server"""
     if port is None:
-      port = H.HTTP_DEFAULT_PORT if not ssl else HTTPS_DEFAULT_PORT
+      port = HTTP.HTTP_DEFAULT_PORT if not ssl else \
+             HTTP.HTTPS_DEFAULT_PORT
     self.requesthandler = self._requesthandler()
     args = [(host, port), self.requesthandler]
     if ssl:
@@ -124,13 +135,13 @@ class Server(object):                                           # {{{1
 if __name__ == "__main__":
   pass
 
-# from . import handler
-# X = handler.Handler()
-# @X.any("/*")
-# def foo(self, splat):
-#   print(repr(self.request)+"\n")
-#   return (x for x in ["Hi ...\n", "... there!\n"])
-# Server(X).run(port = 8000, ssl = ("test-data/ssl/localhost.crt",
-#                                   "test-data/ssl/localhost.key"))
+  from . import handler
+  X = handler.Handler()
+  @X.get("/*")
+  def foo(self, splat):
+    print(repr(self.request)+"\n")
+    return (x for x in ["Hi ...\n", "... there!\n"])
+  Server(X).run(port = 8000, ssl = ("test-data/ssl/localhost.crt",
+                                    "test-data/ssl/localhost.key"))
 
 # vim: set tw=70 sw=2 sts=2 et fdm=marker :

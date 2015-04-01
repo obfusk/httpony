@@ -2,7 +2,7 @@
 #
 # File        : handler_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-06
+# Date        : 2015-04-01
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -10,7 +10,7 @@
 # --                                                            ; }}}1
 
 import httpony.handler as H
-import httpony.http as http
+import httpony.http as HTTP
 import unittest
 
 X = H.Handler("X")
@@ -42,39 +42,39 @@ class Y:                                                        # {{{1
 class Test_Handler(unittest.TestCase):                          # {{{1
 
   def test_get_foo(self):
-    req   = http.Request(uri = "/foo/42")
+    req   = HTTP.Request(uri = "/foo/42")
     resp  = X()(req)
-    self.assertEqual(resp, http.Response(body = "got foo w/ id 42"))
+    self.assertEqual(resp, HTTP.Response(body = "got foo w/ id 42"))
 
   def test_oops(self):
-    req   = http.Request(uri = "/nothing/to/see")
+    req   = HTTP.Request(uri = "/nothing/to/see")
     resp  = X()(req)
-    self.assertEqual(resp, http.Response(status = 404, body = "oops"))
+    self.assertEqual(resp, HTTP.Response(status = 404, body = "oops"))
 
   def test_the_rest(self):
-    req   = http.Request(uri = "/something/else")
+    req   = HTTP.Request(uri = "/something/else")
     resp  = X()(req)
-    self.assertEqual(resp, http.Response(status = 404,
+    self.assertEqual(resp, HTTP.Response(status = 404,
                                          body = "something/else"))
 
   def test_the_rest_post(self):
-    req   = http.Request(uri = "/some/where", method = "POST")
+    req   = HTTP.Request(uri = "/some/where", method = "POST")
     resp  = X()(req)
-    self.assertEqual(resp, http.Response(status = 404,
+    self.assertEqual(resp, HTTP.Response(status = 404,
                                          body = "some/where"))
                                                                 # }}}1
 
 class Test_handler(unittest.TestCase):                          # {{{1
 
   def test_get_foo(self):
-    req   = http.Request(uri = "/bar/37")
+    req   = HTTP.Request(uri = "/bar/37")
     resp  = Y()(req)
-    self.assertEqual(resp, http.Response(body = "got bar w/ id 37"))
+    self.assertEqual(resp, HTTP.Response(body = "got bar w/ id 37"))
 
   def test_oops(self):
-    req   = http.Request(uri = "/nothing/to/see")
+    req   = HTTP.Request(uri = "/nothing/to/see")
     resp  = Y()(req)
-    self.assertEqual(resp, http.Response(status = 404))
+    self.assertEqual(resp, HTTP.Response(status = 404))
                                                                 # }}}1
 
 # ...

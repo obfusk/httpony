@@ -132,6 +132,13 @@ for _m in ["ANY"] + H.HTTP_METHODS:
   locals()[_m.lower()] = _make_method_wrapper(_m)
 del _m
 
+def handle(handler, request, env = None):
+  """handle request"""
+  if env:
+    env_    = request.env.copy(); env_.update(env)
+    request = request.copy(env = env_)
+  return handler()(request)
+
 # ...
 
 # vim: set tw=70 sw=2 sts=2 et fdm=marker :

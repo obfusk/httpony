@@ -2,13 +2,14 @@
 #
 # File        : client_spec.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-09
+# Date        : 2015-04-01
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
 #
 # --                                                            ; }}}1
 
+import httpony
 import httpony.client as C
 import httpony.handler as H
 import httpony.util as U
@@ -38,7 +39,8 @@ class Test_Client(unittest.TestCase):                           # {{{1
     x = c.get("example.com/headers")
     self.assertEqual(U.STR(x.force_body),
                      repr([("Accept", "*/*"), ("Host", "example.com"),
-                           ("User-Agent", C.DEFAULT_USER_AGENT)]))
+                           ("User-Agent",
+                            httpony.DEFAULT_USER_AGENT)]))
 
   def test_post_with_handler(self):
     c = C.Client(handler = X)
