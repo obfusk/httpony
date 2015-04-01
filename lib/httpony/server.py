@@ -2,7 +2,7 @@
 #
 # File        : httpony/server.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-09
+# Date        : 2015-04-01
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -77,11 +77,13 @@ class Server(object):                                           # {{{1
           reqs  = H.requests(S.IRequestHandlerStream(self))
           so    = S.ORequestHandlerStream(self)
           for req in reqs:
-            # ... self.client_address ... chunked ...
+            with_body = req.method != "HEAD"  # TODO
+            # ... self.client_address ...
             resp = s.handler()(req)
             for (k, v) in U.iteritems(s.default_headers()):
               resp.headers.setdefault(k, v)
-            for chunk in resp.unparse_chunked(): so.write(chunk)
+            for chunk in resp.unparse_chunked(with_body):
+              so.write(chunk)
             so.flush()
           print("disconnect {}".format(self.client_address)) # DEBUG
         except socket.timeout:

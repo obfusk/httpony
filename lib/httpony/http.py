@@ -2,7 +2,7 @@
 #
 # File        : httpony/http.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-09
+# Date        : 2015-04-01
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -169,11 +169,11 @@ class Message(U.Immutable):                                     # {{{1
         self._Immutable___set("_content_length", self.body.length())
       self._Immutable___set("body", self.body.readchunks())
 
-  def unparse(self):
+  def unparse(self, with_body = True):
     """request/response as string"""
-    return b"".join(self.unparse_chunked())
+    return b"".join(self.unparse_chunked(with_body))
 
-  def unparse_chunked(self):
+  def unparse_chunked(self, with_body = True):
     """iterate over chunks of request/response as string"""
     if not isinstance(self.body, collections.Sized):
       self.headers["Transfer-Encoding"] = "chunked"
@@ -191,7 +191,9 @@ class Message(U.Immutable):                                     # {{{1
                for (k,v) in U.iteritems(self.headers)]
     yield b"".join(line + S.CRLFb
                    for line in [start_line] + headers + [b""])
-    if chunked:
+    if not with_body:
+      pass
+    elif chunked:
       for chunk in (BY(c) for c in self.body):
         yield BY(hex(len(chunk))[2:]) + S.CRLFb + chunk + S.CRLFb
       yield b"0" + S.CRLFb + S.CRLFb
