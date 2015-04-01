@@ -2,7 +2,7 @@
 #
 # File        : httpony/handler.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-09
+# Date        : 2015-04-01
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -83,8 +83,14 @@ class HandlerBase(object):                                      # {{{1
 class _MethodWrapper(U.Immutable):
   __slots__ = "method call args".split()
 
+# GET also handles HEAD; ANY handles any method
 def _make_handler_classmethod(http_method):                     # {{{1
-  methods = [http_method] if http_method != "ANY" else H.HTTP_METHODS
+  if http_method == "ANY":
+    methods = H.HTTP_METHODS
+  elif http_method == "GET":
+    methods = "GET HEAD".split()
+  else:
+    methods = [http_method]
   def f(cls, uri_pattern): return cls.request(methods, uri_pattern)
   f.__name__  = http_method.lower()
   f.__doc__   = """create {} request handler (decorator)""" \
