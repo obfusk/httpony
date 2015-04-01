@@ -137,7 +137,8 @@ def handle(handler, request, env = None):
   if env:
     env_    = request.env.copy(); env_.update(env)
     request = request.copy(env = env_)
-  return handler()(request)
+  response  = handler()(request)
+  return response or H.response(404)
 
 # ...
 
