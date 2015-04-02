@@ -96,9 +96,9 @@ class HandlerBase(object):                                      # {{{1
       ims = self.request.headers["If-Modified-Since"]
       t2  = int(EU.mktime_tz(EU.parsedate_tz(ims)))
       if t <= t2: return 304
-    if "ETag" in self.request.headers:
-      e2  = self.request.headers["ETag"]
-      if e2 == "*" or e in re.split("\s+,\s+", e2): return 304
+    if "If-None-Match" in self.request.headers:
+      inm = self.request.headers["If-None-Match"]
+      if inm == "*" or e in re.split("\s+,\s+", inm): return 304
     return (200, h, S.ifile_stream(path))
                                                                 # }}}2
 
