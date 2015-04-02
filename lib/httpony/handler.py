@@ -12,7 +12,9 @@
 """HTTP request handler dsl"""
 
 from . import http as H
+from . import stream as S
 from . import util as U
+import os
 import re
 
 RE_TYPE = type(re.compile(""))
@@ -69,6 +71,13 @@ class HandlerBase(object):                                      # {{{1
     # fed
     return decorate
                                                                 # }}}2
+
+  # TODO
+  def redirect(self, uri, status = None):
+    """redirect"""
+    if status is None:
+      status = 302 if self.request.method == "GET" else 303
+    return H.response((status, dict(Location = uri), ""))
 
   # ...
                                                                 # }}}1
@@ -167,6 +176,69 @@ def handle(handler, request, env = None):
   request.env.setdefault("context_params" , {})
   request.env.setdefault("original_uri"   , request.uri)
   return handler()(request) or H.response(404)
+
+@handler
+class Static:                                                   # {{{1
+
+  """serve static assets"""
+
+  path      = "."
+  listdirs  = False
+
+  index_pre = "\n".join(x.lstrip() for x in """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Directory listing for /{0}</title>
+    <meta http-equiv="content-type"
+          content="text/html; charset=utf-8" />
+    </head>
+    <body>
+    <h2>Directory listing for /{0}</h2>
+    <hr />
+    <ul>
+  """.split("\n")[1:])
+
+  index_entry = """<li><a href="{0}">{0}</a>\n"""
+
+  index_post = "\n".join(x.lstrip() for x in """
+    </ul>
+    <hr />
+    </body>
+    </html>
+  """.split("\n")[1:])
+
+  # TODO
+  @get("/*")
+  def get_path(self, path):
+    base    = os.path.join(os.path.abspath(self.path), "")
+    fs_path = os.path.abspath(os.path.join(base, "./" + path))
+    if not (fs_path + "/").startswith(base):
+      return 403
+    elif os.path.isfile(fs_path):
+      return S.ifile_stream(fs_path)
+    elif os.path.isdir(fs_path):
+      index = os.path.join(fs_path, "index.html")
+      if path and not path.endswith("/"):
+        return self.redirect("/" + path + "/", 301)
+      elif os.path.isfile(index):
+        return S.ifile_stream(index)
+      elif self.listdirs:
+        return self.listdir(path, fs_path)
+    return 404
+
+  def listdir(self, path, fs_path):
+    yield self.index_pre.format(U.escape_html(path))
+    for x in sorted(x for x in os.listdir(fs_path)
+                        if not x.startswith(".")):
+      if os.path.isdir(os.path.join(fs_path, x)): x = x + "/"
+      yield self.index_entry.format(U.escape_html(x))
+    yield self.index_post
+                                                                # }}}1
+
+def static(path = ".", listdirs = False, name = "Static"):
+  """create static asset handler"""
+  return type(name, (Static,), dict(path = path, listdirs = listdirs))
 
 # ...
 

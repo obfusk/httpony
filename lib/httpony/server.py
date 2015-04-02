@@ -21,6 +21,7 @@ import collections
 import httpony  # for DEFAULT_SERVER
 import socket
 import ssl
+import sys
 
 try:
   import SocketServer as SS # python2
@@ -133,19 +134,20 @@ class Server(object):                                           # {{{1
 
 # TODO
 if __name__ == "__main__":
-  pass
+  opts = dict( x.split("=", 1) for x in sys.argv[1:] )
+  s = Server(H.static(path = opts.get("path", "."), listdirs = True))
+  s.run(port = int(opts.get("port", 8000)))
 
-  from . import handler
-  X = handler.Handler()
-  @X.get("/*")
-  def foo(self, splat):
-    print(repr(self.request)+"\n")
-    return (x for x in ["Hi ...\n", "... there!\n"])
-  Y = handler.context(
-    ("/foo", X), ("/:bar", handler.context(("/foo/:qux", X))),
-    ("/", X)
-  )
-  Server(Y).run(port = 8000, ssl = ("test-data/ssl/localhost.crt",
-                                    "test-data/ssl/localhost.key"))
+# X = H.Handler()
+# @X.get("/*")
+# def foo(self, splat):
+#   print(repr(self.request)+"\n")
+#   return (x for x in ["Hi ...\n", "... there!\n"])
+# Y = H.context(
+#   ("/foo", X), ("/:bar", H.context(("/foo/:qux", X))),
+#   ("/", X)
+# )
+# Server(Y).run(port = 8000, ssl = ("test-data/ssl/localhost.crt",
+#                                   "test-data/ssl/localhost.key"))
 
 # vim: set tw=70 sw=2 sts=2 et fdm=marker :

@@ -2,7 +2,7 @@
 #
 # File        : httpony/util.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-09
+# Date        : 2015-04-01
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -178,6 +178,13 @@ class Immutable(object):                                        # {{{1
                 for (k,v) in self.iteritems())
     )
                                                                 # }}}1
+
+def escape_html(s, quote = True):
+  """escape HTML"""
+  s = s.replace("&", "&amp;").replace("<", "&lt;") \
+       .replace(">", "&gt;")
+  if quote: s = s.replace('"', "&quot;").replace("'", "&apos;")
+  return s
 
 if sys.version_info.major == 2:
   def iteritems(x):
