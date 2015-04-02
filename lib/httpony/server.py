@@ -2,7 +2,7 @@
 #
 # File        : httpony/server.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-04-01
+# Date        : 2015-04-02
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -27,6 +27,8 @@ try:
   import SocketServer as SS # python2
 except ImportError:
   import socketserver as SS # python3
+
+DEFAULT_TIMEOUT = 10  # TODO
 
 class _ThreadedTCPServer(SS.ThreadingMixIn, SS.TCPServer):
   scheme = HTTP.HTTP_SCHEME
@@ -79,7 +81,7 @@ class Server(object):                                           # {{{1
   def _requesthandler(self):                                    # {{{2
     class RequestHandler(SS.StreamRequestHandler):
 
-      timeout = 10 # TODO
+      timeout = DEFAULT_TIMEOUT
 
       # TODO; DEBUG
       def handle(self):
@@ -111,12 +113,15 @@ class Server(object):                                           # {{{1
     return RequestHandler
                                                                 # }}}2
 
-  def run(self, host = "localhost", port = None, ssl = None):   # {{{2
+  def run(self, host = "localhost", port = None, ssl = None,
+          timeout = None):                                      # {{{2
     """run the server"""
     if port is None:
       port = HTTP.HTTP_DEFAULT_PORT if not ssl else \
              HTTP.HTTPS_DEFAULT_PORT
     self.requesthandler = self._requesthandler()
+    if timeout is not None:
+      self.requesthandler.timeout = timeout
     args = [(host, port), self.requesthandler]
     if ssl:
       if isinstance(ssl, collections.Mapping):
@@ -138,7 +143,8 @@ class Server(object):                                           # {{{1
 if __name__ == "__main__":
   opts = dict( x.split("=", 1) for x in sys.argv[1:] )
   s = Server(H.static(path = opts.get("path", "."), listdirs = True))
-  s.run(port = int(opts.get("port", 8000)))
+  s.run(port    = int(opts.get("port", 8000)),
+        timeout = int(opts.get("timeout", DEFAULT_TIMEOUT)))
 
 # X = H.Handler()
 # @X.get("/*")
