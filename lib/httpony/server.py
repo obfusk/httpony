@@ -131,6 +131,7 @@ class Server(object):                                           # {{{1
     else:
       server = _ThreadedTCPServer(*args)
     try:
+      print("listening on {}:{}".format(host, port))
       server.serve_forever()
     except KeyboardInterrupt:
       server.shutdown()
