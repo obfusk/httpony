@@ -61,10 +61,11 @@ class Server(object):                                           # {{{1
     self.handler = handler; self.server_info = server_info
 
   # TODO
-  def default_headers(self):
+  def default_headers(self, rh):
     """default headers"""
     return {
-      "Server" : self.server_info
+      "Server"      : self.server_info,
+      "Keep-Alive"  : "timeout={}".format(rh.timeout)
     }
 
   # TODO
@@ -94,8 +95,10 @@ class Server(object):                                           # {{{1
             print("request {} {}".format(req.method, req.uri.uri))
             with_body = req.method != "HEAD"  # TODO
             resp = H.handle(s.handler, req, s.default_env(self))
-            for (k, v) in U.iteritems(s.default_headers()):
+            for (k, v) in U.iteritems(s.default_headers(self)):
               resp.headers.setdefault(k, v)
+            if req.headers.get("Connection", "").lower() == "close":
+              resp.headers["Connection"] = "close"
             for chunk in resp.unparse_chunked(with_body):
               so.write(chunk)
             so.flush()

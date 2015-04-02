@@ -380,7 +380,7 @@ def requests(si, bufsize = S.DEFAULT_BUFSIZE):                  # {{{1
   si_ = _SIWrapper(si)
   for msg in generic_messages(si_):
     method, uri, version = msg["start_line"].split(" ")
-    co = msg["headers"].get("connection", "keep-alive").lower()
+    co = msg["headers"].get("Connection", "keep-alive").lower()
     body, si_.si = split_body(si_.si, msg, bufsize)
     yield Request(
       method = method, uri = uri, version = version,
