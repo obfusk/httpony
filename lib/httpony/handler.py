@@ -14,6 +14,8 @@
 from . import http as H
 from . import stream as S
 from . import util as U
+import email.utils as EU
+import hashlib
 import os
 import re
 
@@ -31,9 +33,13 @@ class HandlerBase(object):                                      # {{{1
     """handle request"""
     self.request  = request
     self.params   = request.params()
+    self.headers  = U.idict()
     handler       = self._match(request)
     if handler is None: return None
     self.response = H.response(handler(self, *self.route_args))
+    if self.response:
+      for (k,v) in self.headers.iteritems():
+        self.response.headers.setdefault(k, v)
     return self.response
                                                                 # }}}2
 
@@ -78,6 +84,23 @@ class HandlerBase(object):                                      # {{{1
     if status is None:
       status = 302 if self.request.method == "GET" else 303
     return H.response((status, dict(Location = uri), ""))
+
+  # TODO
+  def serve_file(self, path):                                   # {{{2
+    """serve file"""
+    s = os.stat(path); t = int(s.st_mtime)
+    i = U.BY(str(t)) + b"|" + U.BY(str(s.st_size))
+    e = hashlib.sha1(i).hexdigest()
+    h = { "Last-Modified": EU.formatdate(t), "ETag": e }
+    if "If-Modified-Since" in self.request.headers:
+      ims = self.request.headers["If-Modified-Since"]
+      t2  = int(EU.mktime_tz(EU.parsedate_tz(ims)))
+      if t <= t2: return 304
+    if "ETag" in self.request.headers:
+      e2  = self.request.headers["ETag"]
+      if e2 == "*" or e in re.split("\s+,\s+", e2): return 304
+    return (200, h, S.ifile_stream(path))
+                                                                # }}}2
 
   # ...
                                                                 # }}}1
@@ -216,13 +239,13 @@ class Static:                                                   # {{{1
     if not (fs_path + "/").startswith(base):
       return 403
     elif os.path.isfile(fs_path):
-      return S.ifile_stream(fs_path)
+      return self.serve_file(fs_path)
     elif os.path.isdir(fs_path):
       index = os.path.join(fs_path, "index.html")
       if path and not path.endswith("/"):
         return self.redirect("/" + path + "/", 301)
       elif os.path.isfile(index):
-        return S.ifile_stream(index)
+        return self.serve_file(index)
       elif self.listdirs:
         return self.listdir(path, fs_path)
     return 404
