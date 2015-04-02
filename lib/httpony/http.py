@@ -115,18 +115,22 @@ class URI(U.Immutable):                                         # {{{1
 
   @property
   def schemeless_uri(self):
-    s = self.host_and_port + self.relative_uri
-    if self.password:
-      s = ":" + self.password + "@" + s
-      if self.username: s = self.username + s
-    elif self.username:
-      s = self.username + "@" + s
-    return s
+    return self.username_and_password + self.host_and_port + \
+           self.relative_uri
 
   @property
   def relative_uri(self):
-    s = self.path
-    if self.query: s += "?" + self.query
+    return self.path + self.query_string
+
+  @property
+  def username_and_password(self):
+    if self.password:
+      s = ":" + self.password + "@"
+      if self.username: s = self.username + s
+    elif self.username:
+      s = self.username + "@"
+    else:
+      s = ""
     return s
 
   @property
@@ -145,14 +149,26 @@ class URI(U.Immutable):                                         # {{{1
     else:
       return None
 
+  @property
+  def query_string(self):
+    return "?" + self.query if self.query else ""
+
   def with_scheme(self, scheme):
     """with other scheme"""
     return type(self)(scheme + "://" + self.schemeless_uri)
 
   def with_host_and_port(self, host_and_port):
     """with other host:port"""
-    return type(self)(self.scheme + "://" + host_and_port +
+    return type(self)(self.scheme + "://" +
+                      self.username_and_password + host_and_port +
                       self.relative_uri)
+
+  def with_path(self, path):
+    """with other path"""
+    if not path.startswith("/"): path = "/" + path
+    return type(self)(self.scheme + "://" +
+                      self.username_and_password +
+                      self.host_and_port + path + self.query_string)
 
   def __eq__(self, rhs):
     if isinstance(rhs, str  ): rhs = type(self)(rhs)
@@ -241,6 +257,21 @@ class Request(Message):                                         # {{{1
     if "scheme" in self.env:
       self._Immutable___set("uri",
                             self.uri.with_scheme(self.env["scheme"]))
+
+  # TODO
+  def params(self):
+    """query_params + context_params"""
+    params = self.uri.query_params.copy()
+    params.update(self.env.get("context_params", {}))
+    return params
+
+  def update_env(self, env):
+    """update self.env w/ env"""
+    self.env.update(env)
+
+  def with_uri(self, uri):
+    """with other uri"""
+    return self.copy(uri = uri)
 
   def unparse_start_line(self):
     return "{} {} {}".format(self.method, self.uri.relative_uri,

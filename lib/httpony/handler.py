@@ -28,7 +28,7 @@ class HandlerBase(object):                                      # {{{1
   def __call__(self, request):                                  # {{{2
     """handle request"""
     self.request  = request
-    self.params   = {}
+    self.params   = request.params()
     handler       = self._match(request)
     if handler is None: return None
     self.response = H.response(handler(self, *self.route_args))
@@ -40,7 +40,7 @@ class HandlerBase(object):                                      # {{{1
     for h in self._handlers:
       methods, uri_pattern, handler = h
       if request.method in methods:
-        m = uri_pattern.search(request.uri.relative_uri)
+        m = uri_pattern.search(request.uri.path)
         if m is not None:
           self.route_args   = m.groups()
           self.route_params = m.groupdict()
@@ -59,16 +59,9 @@ class HandlerBase(object):                                      # {{{1
       if isinstance(uri_pattern, RE_TYPE):
         p = uri_pattern
       else:
-        def f(x):
-          if re.search("\A:[A-Za-z_][A-Za-z0-9_]+\Z", x):
-            return "(?P<" + x[1:] + ">[^/]+)"
-          elif x == "*":
-            return "(.*)"
-          else:
-            return re.escape(x)
-        # fed
         p = re.compile(
-          "\A" + "/".join(map(f, uri_pattern.split("/"))) + "\Z"
+          "\A" + "/".join(map(_pattern_to_regex,
+                              uri_pattern.split("/"))) + "\Z"
         )
       if not hasattr(cls, "_handlers"): cls._handlers = []
       cls._handlers += [(methods, p, meth)]
@@ -79,6 +72,14 @@ class HandlerBase(object):                                      # {{{1
 
   # ...
                                                                 # }}}1
+
+def _pattern_to_regex(x):
+  if re.search("\A:[A-Za-z_][A-Za-z0-9_]+\Z", x):
+    return "(?P<" + x[1:] + ">[^/]+)"
+  elif x == "*":
+    return "(.*)"
+  else:
+    return re.escape(x)
 
 class _MethodWrapper(U.Immutable):
   __slots__ = "method call args".split()
@@ -132,13 +133,40 @@ for _m in ["ANY"] + H.HTTP_METHODS:
   locals()[_m.lower()] = _make_method_wrapper(_m)
 del _m
 
+# TODO
+def context(*prefixes_and_handlers):                            # {{{1
+  """new handler that dispatches based on prefix match"""
+  dispatch = []
+  for (p, h) in prefixes_and_handlers:
+    if not isinstance(p, RE_TYPE):
+      p = re.compile(
+        "\A" + "/".join(map(_pattern_to_regex, p.split("/")))
+      )
+    dispatch += [(p, h)]
+  def make_handler():
+    def handler(request):
+      for (p, h) in dispatch:
+        m = p.search(request.uri.path)
+        if m is not None:
+          pre, path = m.string[:m.end()], m.string[m.end():]
+          request.env["context"       ] += [pre]
+          request.env["context_args"  ] += m.groups()
+          request.env["context_params"].update(m.groupdict())
+          return h()(request.with_uri(request.uri.with_path(path)))
+    return handler
+  return make_handler
+                                                                # }}}1
+
+# NB: remote_addr, scheme, server_addr, server_info should be set by
+# the server
 def handle(handler, request, env = None):
   """handle request"""
-  if env:
-    env_    = request.env.copy(); env_.update(env)
-    request = request.copy(env = env_)
-  response  = handler()(request)
-  return response or H.response(404)
+  if env: request.update_env(env)
+  request.env.setdefault("context"        , [])
+  request.env.setdefault("context_args"   , [])
+  request.env.setdefault("context_params" , {})
+  request.env.setdefault("original_uri"   , request.uri)
+  return handler()(request) or H.response(404)
 
 # ...
 

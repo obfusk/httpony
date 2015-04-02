@@ -141,7 +141,11 @@ if __name__ == "__main__":
   def foo(self, splat):
     print(repr(self.request)+"\n")
     return (x for x in ["Hi ...\n", "... there!\n"])
-  Server(X).run(port = 8000, ssl = ("test-data/ssl/localhost.crt",
+  Y = handler.context(
+    ("/foo", X), ("/:bar", handler.context(("/foo/:qux", X))),
+    ("/", X)
+  )
+  Server(Y).run(port = 8000, ssl = ("test-data/ssl/localhost.crt",
                                     "test-data/ssl/localhost.key"))
 
 # vim: set tw=70 sw=2 sts=2 et fdm=marker :
