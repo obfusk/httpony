@@ -81,14 +81,15 @@ class Server(object):                                           # {{{1
 
       timeout = 10 # TODO
 
-      # TODO
+      # TODO; DEBUG
       def handle(self):
         s = self.httpony_server
         try:
-          print("connect {}".format(self.client_address)) # DEBUG
+          print("connect {}".format(self.client_address))
           reqs  = HTTP.requests(S.IRequestHandlerStream(self))
           so    = S.ORequestHandlerStream(self)
           for req in reqs:
+            print("request {} {}".format(req.method, req.uri.uri))
             with_body = req.method != "HEAD"  # TODO
             resp = H.handle(s.handler, req, s.default_env(self))
             for (k, v) in U.iteritems(s.default_headers()):
@@ -96,7 +97,8 @@ class Server(object):                                           # {{{1
             for chunk in resp.unparse_chunked(with_body):
               so.write(chunk)
             so.flush()
-          print("disconnect {}".format(self.client_address)) # DEBUG
+            print("response {}".format(resp.status))
+          print("disconnect {}".format(self.client_address))
         except socket.timeout:
           print("timeout!") # TODO
         except ssl.SSLError as e:

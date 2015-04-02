@@ -2,7 +2,7 @@
 #
 # File        : httpony/stream.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-03-09
+# Date        : 2015-04-01
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -169,6 +169,9 @@ class IStreamDrop(IStream):                                     # {{{1
   def readline(self):
     self._force_take()
     return self.parent.readline()
+
+  def close(self):
+    return self.parent.close()
                                                                 # }}}1
 
 class OStream(object):                                          # {{{1

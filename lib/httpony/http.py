@@ -2,7 +2,7 @@
 #
 # File        : httpony/http.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-04-01
+# Date        : 2015-04-02
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -74,6 +74,7 @@ HTTPS_SCHEME        = "https"
 
 HTTP_METHODS        = "OPTIONS GET HEAD POST PUT DELETE".split()
 
+# TODO
 class Error(RuntimeError):
   pass
 
@@ -330,6 +331,11 @@ class Response(Message):                                        # {{{1
     )
                                                                 # }}}1
 
+class _SIWrapper(object):
+  def __init__(self, si): self.si = si
+  def readline(self): return self.si.readline()
+
+# NB: si is probably a _SIWrapper; only use .readline()
 def generic_messages(si):                                       # {{{1
   """iterate over stream of HTTP messages (requests or responses)"""
   while True:
@@ -359,36 +365,37 @@ def http_chunked_chunks(si):                                    # {{{1
   si.readline()
                                                                 # }}}1
 
-def split_body(msg, bufsize):                                   # {{{1
+def split_body(si, msg, bufsize):                               # {{{1
   """split stream into body and rest"""
   te = msg["headers"].get("Transfer-Encoding", "")
   cl = msg["headers"].get("Content-Length", 0)
   if te.lower() == "chunked":
-    return msg["body"].splitchunked(http_chunked_chunks, bufsize)
+    return si.splitchunked(http_chunked_chunks, bufsize)
   else:
-    return msg["body"].split(int(cl), bufsize)
+    return si.split(int(cl), bufsize)
                                                                 # }}}1
 
 def requests(si, bufsize = S.DEFAULT_BUFSIZE):                  # {{{1
   """iterate over HTTP requests"""
-  for msg in generic_messages(si):
+  si_ = _SIWrapper(si)
+  for msg in generic_messages(si_):
     method, uri, version = msg["start_line"].split(" ")
     co = msg["headers"].get("connection", "keep-alive").lower()
-    body, si = split_body(msg, bufsize)
+    body, si_.si = split_body(si_.si, msg, bufsize)
     yield Request(
       method = method, uri = uri, version = version,
       headers = msg["headers"], body = body
     )
     if co == "close":
-      # si.close()  # TODO
-      return
+      si_.si.close(); return
                                                                 # }}}1
 
 def responses(si, bufsize = S.DEFAULT_BUFSIZE):                 # {{{1
   """iterate over HTTP responses"""
-  for msg in generic_messages(si):
+  si_ = _SIWrapper(si)
+  for msg in generic_messages(si_):
     version, status, reason = msg["start_line"].split(" ", 2)
-    body, si = split_body(msg, bufsize)
+    body, si_.si = split_body(si_.si, msg, bufsize)
     yield Response(
       version = version, status = int(status), reason = reason,
       headers = msg["headers"], body = body
