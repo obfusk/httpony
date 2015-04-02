@@ -2,7 +2,7 @@
 #
 # File        : httpony/handler.py
 # Maintainer  : Felix C. Stegerman <flx@obfusk.net>
-# Date        : 2015-04-01
+# Date        : 2015-04-02
 #
 # Copyright   : Copyright (C) 2015  Felix C. Stegerman
 # Licence     : LGPLv3+
@@ -90,7 +90,7 @@ class HandlerBase(object):                                      # {{{1
     """serve file"""
     s = os.stat(path); t = int(s.st_mtime)
     i = U.BY(str(t)) + b"|" + U.BY(str(s.st_size))
-    e = hashlib.sha1(i).hexdigest()
+    e = 'W/"' + hashlib.sha1(i).hexdigest() + '"'
     h = { "Last-Modified": EU.formatdate(t), "ETag": e }
     if "If-Modified-Since" in self.request.headers:
       ims = self.request.headers["If-Modified-Since"]
