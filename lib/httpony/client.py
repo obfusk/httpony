@@ -18,6 +18,11 @@ import httpony  # for DEFAULT_USER_AGENT
 import socket
 import ssl
 
+try:
+  import Queue as Q # python2
+except ImportError:
+  import queue as Q # python3
+
 _CLIENTS = {}
 
 # TODO
@@ -65,17 +70,20 @@ class Client(object):                                           # {{{1
     return sock
 
   # TODO
-  def _socket_request(self, req):
-    sock  = self._socket(req.uri)
-    resps = HTTP.responses(S.ISocketStream(sock))
-    so    = S.OSocketStream(sock)
-    resp  = None
+  def _socket_request(self, reqs):
+    prev = None; sock = None; resps = None
     try:
-      for chunk in req.unparse_chunked(): so.write(chunk)
-      so.flush(); resp = next(resps, None);
+      while not reqs.empty():
+        req = reqs.get()
+        if not prev or prev.host_and_port != req.uri.host_and_port:
+          if sock: sock.close()
+          sock  = self._socket(req.uri)
+          resps = HTTP.responses(S.ISocketStream(sock))
+          so    = S.OSocketStream(sock)
+        for chunk in req.unparse_chunked(): so.write(chunk)
+        so.flush(); yield next(resps, None); prev = req.uri
     finally:
-      sock.close()
-    return resp
+      if sock: sock.close()
 
   # TODO
   # "overloaded"
@@ -87,16 +95,19 @@ class Client(object):                                           # {{{1
     req = HTTP.Request(method = method, uri = uri,
                     headers = headers, body = body or "")
     if not req.uri.host: raise ValueError("no host specified")
-    req.headers.setdefault("Host", req.uri.host)
+    req.headers.setdefault("Host", req.uri.host_and_port)
     if self.handler:
       resp = H.handle(self.handler, req, self.default_env())
-    elif self.persistent:
-      # TODO: we need to check whether host_and_port is the same
-      raise RuntimeError("persistent connections not yet implemented")
+    elif self.persistent: # FIXME
+      if not hasattr(self, "_reqs"):
+        self._queue = Q.Queue()
+        self._reqs  = self._socket_request(self._queue)
+      self._queue.put(req); resp = next(self._reqs, None)
     else:
       req.headers["Connection"] = "close" # TODO
-      resp = self._socket_request(req)
-    return resp.force_body if body_only else resp
+      q = Q.Queue(); q.put(req)
+      resp = list(self._socket_request(q))[0]
+    return resp.force_body if resp is not None and body_only else resp
                                                                 # }}}2
 
   # TODO

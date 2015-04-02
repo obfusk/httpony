@@ -101,7 +101,7 @@ class Server(object):                                           # {{{1
           print("timeout!") # TODO
         except ssl.SSLError as e:
           if e.message.find("read operation timed out") != -1:
-            print("timeout!") # TODO
+            print("ssl timeout!") # TODO
           else:
             raise
 

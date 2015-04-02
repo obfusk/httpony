@@ -380,7 +380,8 @@ def requests(si, bufsize = S.DEFAULT_BUFSIZE):                  # {{{1
       headers = msg["headers"], body = body
     )
     if co == "close":
-      si.close(); return
+      # si.close()  # TODO
+      return
                                                                 # }}}1
 
 def responses(si, bufsize = S.DEFAULT_BUFSIZE):                 # {{{1
